@@ -22,7 +22,7 @@ app.use("/api/v1", rootRouter)
 
 
 // Routes
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
     res.send('Welcome to College Nerd');
 });
 

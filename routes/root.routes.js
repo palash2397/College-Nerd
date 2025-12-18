@@ -4,7 +4,7 @@ import userRouter from "./user.routes.js";
 
 const rootRouter = Router();
 
-userRouter.use("/user", userRouter)
+rootRouter.use("/user", userRouter)
 
 
 export default rootRouter;
