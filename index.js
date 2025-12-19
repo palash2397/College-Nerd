@@ -19,6 +19,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(morgan("dev"))
+app.use("/api/v1",express.static("public"))
+
 
 import rootRouter from './routes/root.routes.js';
 app.use("/api/v1", rootRouter)

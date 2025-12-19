@@ -1,10 +1,10 @@
-import { ApiResponse } from "../utils/ApiResponse.js";
-import { Msg } from "../utils/responseMsg.js"
-import User from "../models/user/user.js";
+import { ApiResponse } from "../../utils/ApiResponse.js";
+import { Msg } from "../../utils/responseMsg.js"
+import User from "../../models/user/user.js";
 import Jwt from "jsonwebtoken"
 import Joi from "joi";
-import { generateOtp, getExpirationTime, deleteOldImages } from "../utils/helpers.js";
-import { sendOtpMail, sendOtpforgotPasswordMail } from "../utils/email.js";
+import { generateOtp, getExpirationTime, deleteOldImages } from "../../utils/helpers.js";
+import { sendOtpMail, sendOtpforgotPasswordMail } from "../../utils/email.js";
 
 
 export const registerHandle = async (req, res) => {
@@ -304,9 +304,9 @@ export const resetPasswordHandle = async (req, res) => {
         const { email, password, confirmPassword } = req.body;
         const schema = Joi.object({
             email: Joi.string().email().required(),
-            password: Joi.string().min(6).required(),
+            password: Joi.string().min(8).required(),
             confirmPassword: Joi.string()
-                .min(6)
+                .min(8)
                 .required()
                 .valid(Joi.ref("password"))
                 .messages({
@@ -358,6 +358,60 @@ export const resetPasswordHandle = async (req, res) => {
 };
 
 
+
+export const changePasswordHandle = async (req, res) => {
+    try {
+        const { password, confirmPassword } = req.body;
+        const schema = Joi.object({
+            password: Joi.string().min(8).message({
+                'string.min': 'Password must be at least 8 characters long',
+                'string.empty': 'Password is required',
+                'any.required': 'Password is required'
+            }).required(),
+            confirmPassword: Joi.string()
+                .min(8)
+                .required()
+                .valid(Joi.ref("password"))
+                .messages({
+                    'string.min': 'Password must be at least 8 characters long',
+                    'string.empty': 'Password is required',
+                    'any.required': 'Password is required',
+                    "any.only": "Confirm password must match password",
+                }).required()
+        });
+
+        const { error } = schema.validate(req.body);
+        if (error)
+            return res
+                .status(400)
+                .json({ status: false, message: error.details[0].message });
+
+        const user = await User.findOne({ _id: req.user.id });
+        if (!user)
+            return res.status(404).json(new ApiResponse(404, {}, Msg.USER_NOT_FOUND));
+
+
+        if (!user.isActive)
+            return res
+                .status(400)
+                .json(new ApiResponse(400, {}, Msg.ACCOUNT_DEACTIVATED));
+
+        const oldPassword = await user.isPasswordCorrect(password);
+        if (oldPassword)
+            return res
+                .status(400)
+                .json(new ApiResponse(400, {}, Msg.ENTERED_OLD_PASSWORD));
+
+        user.password = password;
+        await user.save();
+        return res.status(200).json(new ApiResponse(200, {}, Msg.PASSWORD_CHANGED));
+    } catch (error) {
+        console.log(`Error while changing password :`, error);
+        return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    }
+};
+
+
 export const myProfileHandle = async (req, res) => {
     try {
         const user = await User.findOne({ _id: req.user.id }).select(
@@ -376,7 +430,7 @@ export const myProfileHandle = async (req, res) => {
 
         // If avatar is a Cloudinary URL, use as is, else fallback
         user.avatar = user.avatar
-            ? user.avatar
+            ? `${process.env.BASE_URL}/profile/${user.avatar}`
             : `${process.env.DEFAULT_PROFILE_PIC}`;
 
         return res

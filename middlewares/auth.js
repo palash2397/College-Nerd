@@ -3,7 +3,7 @@ import { Msg } from "../utils/responseMsg.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 export const auth = (req, res, next) => {
-  const token =  req.header("Authorization")?.replace("Bearer ", "").trim();
+  const token = req.header("Authorization")?.replace("Bearer ", "").trim();
 
   if (!token)
     return res.status(401).json(new ApiResponse(401, {}, Msg.FORBIDDEN));
@@ -13,7 +13,19 @@ export const auth = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
-    
+
     res.status(401).json(new ApiResponse(401, {}, Msg.UNAUTHORIZED));
   }
+};
+
+
+
+
+export const isAdmin = (req, res, next) => {
+  console.log("User Role:", req.user.role);
+  if (req.user.role !== 'admin') {
+
+    return res.status(401).json(new ApiResponse(401, {}, "Access is forbidden"));
+  }
+  next();
 };
