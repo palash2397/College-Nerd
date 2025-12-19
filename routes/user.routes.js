@@ -9,6 +9,12 @@ import {
   updateProfileHandle,
   myProfileHandle,
   changePasswordHandle,
+  allProgramsHandle,
+  allNotifications,
+  updateNotificationSettings,
+  myLanguagesHandle,
+  updateLanguageHandle,
+  
 } from "../controllers/user/user.controller.js";
 import { auth } from "../middlewares/auth.js";
 import { setUploadPath } from "../utils/helpers.js";
@@ -31,5 +37,11 @@ userRouter.post(
   updateProfileHandle,
 );
 userRouter.get("/profile", auth, myProfileHandle);
+userRouter.get("/programs", allProgramsHandle);
+userRouter.get("/notifications", auth, allNotifications);
+userRouter.patch("/notification-setting", auth, updateNotificationSettings)
+userRouter.get("/languages", auth, myLanguagesHandle)
+userRouter.patch("/language", auth, updateLanguageHandle)
+
 
 export default userRouter;

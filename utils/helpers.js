@@ -33,3 +33,15 @@ export const deleteOldImages = (folder, file) => {
     console.log("error while deleting file --------->", error);
   }
 };
+
+
+
+export const allowedFields = [
+  "generalNotification",
+  "sound",
+  "vibrate",
+  "appUpdates"
+];
+
+
+export const allowedLanguages = ["en", "fr", "es"];

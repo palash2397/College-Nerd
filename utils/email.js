@@ -78,3 +78,26 @@ export const sendOtpforgotPasswordMail = async function ( otp, to) {
         }
     });
 };
+
+
+export const sendContactUsMail = async function (name, msg, from) {
+    let mailOptions = {
+        from: from, 
+        to: process.env.SMTP_USER,
+        subject: "Contact us",
+        template: "contact",
+        context: {
+            name,
+            msg
+        },
+    };
+
+    // Send email using transporter
+    transporter.sendMail(mailOptions, function (err, info) {
+        if (err) { // If error occurs while sending email
+            console.log("Error -" + err); // Log the error
+        } else { // If email sent successfully
+            console.log("Email sent successfully", info.response); // Log the success message with email response info
+        }
+    });
+};
