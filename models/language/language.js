@@ -18,5 +18,7 @@ const LanguageSchema = new mongoose.Schema(
     },
     { timestamps: true }
 );
+
+LanguageSchema.index({ user: 1 }, { unique: true });
 const Language = mongoose.model("Language", LanguageSchema);
 export default Language

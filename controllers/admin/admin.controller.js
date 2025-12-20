@@ -1,8 +1,6 @@
 import Faq from "../../models/faq/faq.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { Msg } from "../../utils/responseMsg.js";
-
-
 import Joi from "joi";
 
 
