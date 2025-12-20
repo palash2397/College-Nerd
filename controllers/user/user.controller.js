@@ -1,12 +1,15 @@
 import Jwt from "jsonwebtoken";
 import Joi from "joi";
-import { ApiResponse } from "../../utils/ApiResponse.js";
-import { Msg } from "../../utils/responseMsg.js";
+
 import User from "../../models/user/user.js";
 import Program from "../../models/program/program.js";
 import Notification from "../../models/notification/notification.js";
 import Language from "../../models/language/language.js";
+import Faq from "../../models/faq/faq.js";
+
 import { allowedLanguages } from "../../utils/helpers.js";
+import { ApiResponse } from "../../utils/ApiResponse.js";
+import { Msg } from "../../utils/responseMsg.js";
 import {
   generateOtp,
   getExpirationTime,
@@ -41,19 +44,19 @@ export const registerHandle = async (req, res) => {
       $or: [{ email }, { phoneNumber }],
     });
     if (existingUser) {
-      if (existingUser.isVerified == false) {
-        const otp = generateOtp();
-        existingUser.otp = otp;
-        await existingUser.save();
-        await sendOtpMail(otp, existingUser.email);
+      // if (existingUser.isVerified == false) {
+      //   const otp = generateOtp();
+      //   existingUser.otp = otp;
+      //   await existingUser.save();
+      //   await sendOtpMail(otp, existingUser.email);
 
-        console.log(`Resend OTP ${otp}`);
-        return res
-          .status(201)
-          .json(
-            new ApiResponse(200, { userId: existingUser._id }, Msg.OTP_RESENT)
-          );
-      }
+      //   console.log(`Resend OTP ${otp}`);
+      //   return res
+      //     .status(201)
+      //     .json(
+      //       new ApiResponse(200, { userId: existingUser._id }, Msg.OTP_RESENT)
+      //     );
+      // }
 
       return res.status(401).json(new ApiResponse(400, {}, Msg.USER_EXISTS));
     }
@@ -610,8 +613,6 @@ export const updateLanguageHandle = async (req, res) => {
   }
 };
 
-
-
 export const contactUsHandle = async (req, res) => {
   try {
     const { msg } = req.body
@@ -646,5 +647,19 @@ export const contactUsHandle = async (req, res) => {
   } catch (error) {
     console.error("Error while processing contact form:", error);
     return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+
+export const getFaqHandle = async (req, res) => {
+  try {
+    const data = await Faq.find().select("-__v -createdAt -updatedAt");
+
+    return res
+      .status(201)
+      .json(new ApiResponse(200, data, Msg.DATA_ADDED));
+  } catch (error) {
+    console.log(`error while getting faq ${error}`);
+    res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };

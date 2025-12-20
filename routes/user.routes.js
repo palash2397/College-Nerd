@@ -14,7 +14,8 @@ import {
   updateNotificationSettings,
   myLanguagesHandle,
   updateLanguageHandle,
-  contactUsHandle
+  contactUsHandle,
+  getFaqHandle
   
 } from "../controllers/user/user.controller.js";
 import { auth } from "../middlewares/auth.js";
@@ -44,6 +45,7 @@ userRouter.patch("/notification-setting", auth, updateNotificationSettings)
 userRouter.get("/languages", auth, myLanguagesHandle)
 userRouter.patch("/language", auth, updateLanguageHandle)
 userRouter.post("/contact", auth, contactUsHandle)
+userRouter.get("/faq", auth, getFaqHandle)
 
 
 export default userRouter;
