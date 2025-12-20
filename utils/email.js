@@ -80,15 +80,16 @@ export const sendOtpforgotPasswordMail = async function ( otp, to) {
 };
 
 
-export const sendContactUsMail = async function (name, msg, from) {
+export const sendContactUsMail = async function (name, msg, email) {
     let mailOptions = {
-        from: from, 
-        to: process.env.SMTP_USER,
+        from: email, 
+        to: `adminn@yopmail.com`,
         subject: "Contact us",
         template: "contact",
         context: {
             name,
-            msg
+            msg,
+            email
         },
     };
 

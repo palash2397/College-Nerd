@@ -13,7 +13,7 @@ import {
   deleteOldImages,
   allowedFields,
 } from "../../utils/helpers.js";
-import { sendOtpMail, sendOtpforgotPasswordMail } from "../../utils/email.js";
+import { sendOtpMail, sendOtpforgotPasswordMail, sendContactUsMail } from "../../utils/email.js";
 
 export const registerHandle = async (req, res) => {
   try {
@@ -606,6 +606,45 @@ export const updateLanguageHandle = async (req, res) => {
       .json(new ApiResponse(200, language, Msg.DATA_UPDATED));
   } catch (error) {
     console.error("Error while updating language:", error);
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+
+
+export const contactUsHandle = async (req, res) => {
+  try {
+    const { msg } = req.body
+
+    const schema = Joi.object({
+      msg: Joi.string().min(10).max(2000).required().messages({
+        'string.empty': 'Message is required',
+        'string.min': 'Message must be at least 10 characters long',
+        'string.max': 'Message cannot be longer than 2000 characters',
+        'any.required': 'Message is required'
+      })
+
+    });
+
+    const { error } = schema.validate(req.body);
+
+    if (error)
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, error.details[0].message));
+
+
+    const user = await User.findOne({ _id: req.user.id })
+    if (!user) {
+      return res.status(400).json(new ApiResponse(400, {}, Msg.USER_NOT_FOUND));
+    }
+    
+    await sendContactUsMail(user.name, msg, user.email);
+
+    return res.status(200).json(new ApiResponse(200, {}, 'Thank you for contacting us. We will get back to you soon!'));
+
+  } catch (error) {
+    console.error("Error while processing contact form:", error);
     return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
