@@ -35,6 +35,8 @@ export const Msg = {
   DATA_UPDATED: `Data updated successfully`,
   DATA_DELETED: `Data deleted successfully`,
   DATA_ADDED: `Data added successfully`,
+  DATA_REQUIRED: `Data is required`,
+  DATA_ALREADY_EXISTS: `Data  already exists`,
 
   // OTP
   OTP_SENT: `The OTP has been successfully sent to your registered email. Please check your inbox.`,

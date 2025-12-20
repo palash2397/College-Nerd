@@ -1,6 +1,7 @@
 import Faq from "../../models/faq/faq.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { Msg } from "../../utils/responseMsg.js";
+import LegalMessage from "../../models/privacy-policy/police.js";
 import Joi from "joi";
 
 
@@ -34,4 +35,169 @@ export const addFaqHandle = async (req, res) => {
         res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
     }
 };
+
+
+export const deleteFaqHandle = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+
+        const schema = Joi.string().required();
+        const { error } = schema.validate(id);
+
+        if (error) {
+            return res
+                .status(400)
+                .json(new ApiResponse(400, {}, 'FAQ ID is required'));
+        }
+
+        // Delete the FAQ
+        const deletedFaq = await Faq.findByIdAndDelete(id);
+
+        if (!deletedFaq) {
+            return res
+                .status(404)
+                .json(new ApiResponse(404, {}, Msg.DATA_REQUIRED));
+        }
+
+        return res
+            .status(200)
+            .json(new ApiResponse(200, { id: deletedFaq._id }, Msg.DATA_DELETED));
+
+    } catch (error) {
+        console.error('Error while deleting FAQ:', error);
+        return res
+            .status(500)
+            .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    }
+};
+
+
+export const legalMessage = async (req, res) => {
+    try {
+        const { type, message } = req.body;
+
+        const schema = Joi.object({
+            type: Joi.string()
+                .valid("privacy_policy", "terms_conditions")
+                .required()
+                .messages({
+                    "any.required": "Type is required"
+                }),
+
+            message: Joi.string()
+                .min(1)
+                .required()
+                .messages({
+                    "string.empty": "Message cannot be empty",
+                    "any.required": "Message is required"
+                })
+        });
+
+        const { error } = schema.validate(req.body);
+
+        if (error)
+            return res
+                .status(400)
+                .json(new ApiResponse(400, {}, error.details[0].message));
+
+        const exists = await LegalMessage.findOne({ type });
+        if (exists) {
+            return res
+                .status(409)
+                .json(new ApiResponse(409, {}, Msg.DATA_ALREADY_EXISTS));
+        }
+
+        const legalMessage = await LegalMessage.create({ type, message });
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    { id: legalMessage._id },
+                    Msg.DATA_CREATED
+                )
+            );
+
+    } catch (error) {
+        return res
+            .status(500)
+            .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    }
+};
+
+
+
+export const getLegalMessage = async (req, res) => {
+    try {
+        const { type } = req.params;
+
+        const legalMessage = await LegalMessage.findOne({ type });
+
+        if (!legalMessage) {
+            return res
+                .status(404)
+                .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    { message: legalMessage.message },
+                    Msg.DATA_FETCHED
+                )
+            );
+
+    } catch (error) {
+        return res
+            .status(500)
+            .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    }
+};
+
+
+export const updateLegalMessage = async (req, res) => {
+    try {
+
+        const { type, message } = req.body;
+
+        if (!message) {
+            return res
+                .status(400)
+                .json(new ApiResponse(400, {}, Msg.INVALID_DATA));
+        }
+
+        const updated = await LegalMessage.findOneAndUpdate(
+            { type },
+            { $set: { message } },
+            { new: true }
+        );
+
+        if (!updated) {
+            return res
+                .status(404)
+                .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    { id: updated._id },
+                    Msg.DATA_UPDATED
+                )
+            );
+
+    } catch (error) {
+        return res
+            .status(500)
+            .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    }
+};
+
+
 

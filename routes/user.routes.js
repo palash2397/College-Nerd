@@ -15,8 +15,7 @@ import {
   myLanguagesHandle,
   updateLanguageHandle,
   contactUsHandle,
-  getFaqHandle
-  
+  getFaqHandle,
 } from "../controllers/user/user.controller.js";
 import { auth } from "../middlewares/auth.js";
 import { setUploadPath } from "../utils/helpers.js";
