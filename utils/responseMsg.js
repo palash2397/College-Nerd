@@ -31,6 +31,7 @@ export const Msg = {
 
   // Data
   DATA_FETCHED: `Data fetched successfully`,
+  DATA_GENERATED: `Data generated successfully`,
   DATA_NOT_FOUND: `No data found`,
   DATA_UPDATED: `Data updated successfully`,
   DATA_DELETED: `Data deleted successfully`,

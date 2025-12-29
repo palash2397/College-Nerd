@@ -1,5 +1,6 @@
 import Jwt from "jsonwebtoken";
 import Joi from "joi";
+import axios from "axios";
 
 import User from "../../models/user/user.js";
 import Program from "../../models/program/program.js";
@@ -695,4 +696,46 @@ export const saveTranscriptHandle = async (req, res) => {
   }
 };
 
-// export
+export const convertToSoapHandle = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const schema = Joi.object({
+      id: Joi.string().required(),
+    });
+
+    const { error } = schema.validate({ id });
+    if (error)
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, error.details[0].message));
+
+    const data = await Transcription.findById(id).select("-createdAt -updatedAt -__v");
+    console.log("data ----------->", data)
+
+    if (!data)
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+
+    const response = await axios.post(
+      "https://python.aitechnotech.in/soap-notes/convert-to-soap",
+      {
+        transcription: data.text,
+      }
+    );
+
+    const soapNotes = response.data;
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          transcription: data,
+          soapNotes,
+        },
+        Msg.DATA_GENERATED
+      )
+    );
+  } catch (error) {
+    console.log("Error while converting to soap", error);
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};

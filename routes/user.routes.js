@@ -16,7 +16,8 @@ import {
   updateLanguageHandle,
   contactUsHandle,
   getFaqHandle,
-  saveTranscriptHandle
+  saveTranscriptHandle,
+  convertToSoapHandle
 } from "../controllers/user/user.controller.js";
 import { auth } from "../middlewares/auth.js";
 import { setUploadPath } from "../utils/helpers.js";
@@ -47,6 +48,7 @@ userRouter.patch("/language", auth, updateLanguageHandle)
 userRouter.post("/contact", auth, contactUsHandle)
 userRouter.get("/faq", auth, getFaqHandle)
 userRouter.post("/transcript/save", auth, saveTranscriptHandle)
+userRouter.post("/transcript/soap/:id", auth, convertToSoapHandle )
 
 
 export default userRouter;
