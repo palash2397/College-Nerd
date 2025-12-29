@@ -16,6 +16,7 @@ import {
   updateLanguageHandle,
   contactUsHandle,
   getFaqHandle,
+  saveTranscriptHandle
 } from "../controllers/user/user.controller.js";
 import { auth } from "../middlewares/auth.js";
 import { setUploadPath } from "../utils/helpers.js";
@@ -45,6 +46,7 @@ userRouter.get("/languages", auth, myLanguagesHandle)
 userRouter.patch("/language", auth, updateLanguageHandle)
 userRouter.post("/contact", auth, contactUsHandle)
 userRouter.get("/faq", auth, getFaqHandle)
+userRouter.post("/transcript/save", auth, saveTranscriptHandle)
 
 
 export default userRouter;

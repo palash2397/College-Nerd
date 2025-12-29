@@ -6,6 +6,7 @@ import Program from "../../models/program/program.js";
 import Notification from "../../models/notification/notification.js";
 import Language from "../../models/language/language.js";
 import Faq from "../../models/faq/faq.js";
+import Transcription from "../../models/transcription/Transcription.js";
 
 import { allowedLanguages } from "../../utils/helpers.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
@@ -16,7 +17,11 @@ import {
   deleteOldImages,
   allowedFields,
 } from "../../utils/helpers.js";
-import { sendOtpMail, sendOtpforgotPasswordMail, sendContactUsMail } from "../../utils/email.js";
+import {
+  sendOtpMail,
+  sendOtpforgotPasswordMail,
+  sendContactUsMail,
+} from "../../utils/email.js";
 
 export const registerHandle = async (req, res) => {
   try {
@@ -431,32 +436,26 @@ export const changePasswordHandle = async (req, res) => {
 export const myProfileHandle = async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user.id }).select(
-      "-password -otp -otpExpireAt -__v -createdAt -updatedAt -pin -otpVerifiedForResetPassword"
+      "-password -otp -otpExpireAt -__v -createdAt -updatedAt -pin -otpVerifiedForResetPassword -googleId"
     );
 
     if (!user)
-      return res.status(404).json(new ApiResponse(404, {}, `User not found`));
+      return res.status(404).json(new ApiResponse(404, {}, Msg.USER_NOT_FOUND));
 
     if (!user.isActive)
       return res
         .status(400)
-        .json(
-          new ApiResponse(400, {}, `your account has been temporarily blocked.`)
-        );
+        .json(new ApiResponse(400, {}, Msg.ACCOUNT_DEACTIVATED));
 
     // If avatar is a Cloudinary URL, use as is, else fallback
     user.avatar = user.avatar
       ? `${process.env.BASE_URL}/profile/${user.avatar}`
       : `${process.env.DEFAULT_PROFILE_PIC}`;
 
-    return res
-      .status(200)
-      .json(new ApiResponse(200, user, `Profile fetched successfully.`));
+    return res.status(200).json(new ApiResponse(200, user, Msg.DATA_FETCHED));
   } catch (error) {
     console.log(`Error while fetching profile :`, error);
-    return res
-      .status(501)
-      .json(new ApiResponse(500, {}, `Internal Server Error`));
+    return res.status(501).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
 
@@ -602,7 +601,7 @@ export const updateLanguageHandle = async (req, res) => {
         upsert: true,
         setDefaultsOnInsert: true,
       }
-    ).select("-__v -updatedAt -createdAt")
+    ).select("-__v -updatedAt -createdAt");
 
     return res
       .status(200)
@@ -615,16 +614,15 @@ export const updateLanguageHandle = async (req, res) => {
 
 export const contactUsHandle = async (req, res) => {
   try {
-    const { msg } = req.body
+    const { msg } = req.body;
 
     const schema = Joi.object({
       msg: Joi.string().min(10).max(2000).required().messages({
-        'string.empty': 'Message is required',
-        'string.min': 'Message must be at least 10 characters long',
-        'string.max': 'Message cannot be longer than 2000 characters',
-        'any.required': 'Message is required'
-      })
-
+        "string.empty": "Message is required",
+        "string.min": "Message must be at least 10 characters long",
+        "string.max": "Message cannot be longer than 2000 characters",
+        "any.required": "Message is required",
+      }),
     });
 
     const { error } = schema.validate(req.body);
@@ -634,32 +632,67 @@ export const contactUsHandle = async (req, res) => {
         .status(400)
         .json(new ApiResponse(400, {}, error.details[0].message));
 
-
-    const user = await User.findOne({ _id: req.user.id })
+    const user = await User.findOne({ _id: req.user.id });
     if (!user) {
       return res.status(400).json(new ApiResponse(400, {}, Msg.USER_NOT_FOUND));
     }
-    
+
     await sendContactUsMail(user.name, msg, user.email);
 
-    return res.status(200).json(new ApiResponse(200, {}, 'Thank you for contacting us. We will get back to you soon!'));
-
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          {},
+          "Thank you for contacting us. We will get back to you soon!"
+        )
+      );
   } catch (error) {
     console.error("Error while processing contact form:", error);
     return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
 
-
 export const getFaqHandle = async (req, res) => {
   try {
     const data = await Faq.find().select("-__v -createdAt -updatedAt");
 
-    return res
-      .status(201)
-      .json(new ApiResponse(200, data, Msg.DATA_ADDED));
+    return res.status(201).json(new ApiResponse(200, data, Msg.DATA_ADDED));
   } catch (error) {
     console.log(`error while getting faq ${error}`);
     res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
+
+export const saveTranscriptHandle = async (req, res) => {
+  try {
+    const { text, sessionId } = req.body;
+    const schema = Joi.object({
+      text: Joi.string().trim().required(),
+      sessionId: Joi.string().required(),
+    });
+
+    const { error } = schema.validate(req.body);
+    if (error)
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, error.details[0].message));
+
+    const transcription = await Transcription.create({
+      user: req.user.id,
+      text,
+      status: "approved",
+      sessionId,
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, transcription, Msg.DATA_ADDED));
+  } catch (error) {
+    console.log("Error saving transcription", error);
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+// export
