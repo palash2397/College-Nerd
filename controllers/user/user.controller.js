@@ -1,13 +1,15 @@
 import Jwt from "jsonwebtoken";
 import Joi from "joi";
 import axios from "axios";
+import fs from "fs";
+import FormData from "form-data";
 
 import User from "../../models/user/user.js";
 import Program from "../../models/program/program.js";
 import Notification from "../../models/notification/notification.js";
 import Language from "../../models/language/language.js";
 import Faq from "../../models/faq/faq.js";
-import Transcription from "../../models/transcription/transcription.js";
+import Transcription from "../../models/transcription/Transcription.js";
 
 import { allowedLanguages } from "../../utils/helpers.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
@@ -709,8 +711,10 @@ export const convertToSoapHandle = async (req, res) => {
         .status(400)
         .json(new ApiResponse(400, {}, error.details[0].message));
 
-    const data = await Transcription.findById(id).select("-createdAt -updatedAt -__v");
-    console.log("data ----------->", data)
+    const data = await Transcription.findById(id).select(
+      "-createdAt -updatedAt -__v"
+    );
+    console.log("data ----------->", data);
 
     if (!data)
       return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
@@ -736,6 +740,133 @@ export const convertToSoapHandle = async (req, res) => {
     );
   } catch (error) {
     console.log("Error while converting to soap", error);
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+export const transcribeFileHandle = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json(new ApiResponse(400, {}, Msg.DATA_REQUIRED));
+    }
+    const filePath = req.file.path;
+    const formData = new FormData();
+    formData.append(
+      "file",
+      fs.createReadStream(filePath),
+      req.file.originalname
+    );
+
+    const response = await axios.post(
+      "https://python.aitechnotech.in/transcribe/transcribe-file",
+      formData,
+      { headers: formData.getHeaders() }
+    );
+
+    const transcription = response.data;
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { transcription }, Msg.DATA_GENERATED));
+  } catch (error) {
+    console.log("Error while transcribing file", error);
+
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+export const generateAiNotesHandle = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const schema = Joi.object({
+      id: Joi.string().required(),
+    });
+
+    const { error } = schema.validate({ id });
+    if (error)
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, error.details[0].message));
+
+    const data = await Transcription.findById(id).select(
+      "-createdAt -updatedAt -__v"
+    );
+    console.log("data ----------->", data);
+
+    if (!data)
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+
+    const response = await axios.post(
+      "https://python.aitechnotech.in/ai-notes/generate-structured-notes",
+      {
+        transcription: data.text,
+      }
+    );
+
+    const aiNotes = response.data;
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          transcription: data,
+          aiNotes,
+        },
+        Msg.DATA_GENERATED
+      )
+    );
+  } catch (error) {
+    console.log("Error while generating medical transcription file", error);
+
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+export const generateNotesSummaryHandle = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const schema = Joi.object({
+      id: Joi.string().required(),
+    });
+
+    const { error } = schema.validate({ id });
+    if (error)
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, error.details[0].message));
+
+    const data = await Transcription.findById(id).select(
+      "-createdAt -updatedAt -__v"
+    );
+    console.log("data ----------->", data);
+
+    if (!data)
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+
+    const response = await axios.post(
+      "https://python.aitechnotech.in/ai-summarys/generate-ai-notes",
+      {
+        transcription: data.text,
+      }
+    );
+
+    const summary = response.data;
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          transcription: data,
+          summary,
+        },
+        Msg.DATA_GENERATED
+      )
+    );
+  } catch (error) {
+    console.log("Error while generating medical transcription file", error);
+
     return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };

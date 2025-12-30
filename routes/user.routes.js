@@ -17,7 +17,10 @@ import {
   contactUsHandle,
   getFaqHandle,
   saveTranscriptHandle,
-  convertToSoapHandle
+  convertToSoapHandle,
+  transcribeFileHandle,
+  generateAiNotesHandle,
+  generateNotesSummaryHandle
 } from "../controllers/user/user.controller.js";
 import { auth } from "../middlewares/auth.js";
 import { setUploadPath } from "../utils/helpers.js";
@@ -37,18 +40,27 @@ userRouter.post(
   auth,
   setUploadPath("profile"),
   upload.single("avatar"),
-  updateProfileHandle,
+  updateProfileHandle
 );
 userRouter.get("/profile", auth, myProfileHandle);
 userRouter.get("/programs", allProgramsHandle);
 userRouter.get("/notifications", auth, allNotifications);
-userRouter.patch("/notification-setting", auth, updateNotificationSettings)
-userRouter.get("/languages", auth, myLanguagesHandle)
-userRouter.patch("/language", auth, updateLanguageHandle)
-userRouter.post("/contact", auth, contactUsHandle)
-userRouter.get("/faq", auth, getFaqHandle)
-userRouter.post("/transcript/save", auth, saveTranscriptHandle)
-userRouter.post("/transcript/soap/:id", auth, convertToSoapHandle )
+userRouter.patch("/notification-setting", auth, updateNotificationSettings);
+userRouter.get("/languages", auth, myLanguagesHandle);
+userRouter.patch("/language", auth, updateLanguageHandle);
+userRouter.post("/contact", auth, contactUsHandle);
+userRouter.get("/faq", auth, getFaqHandle);
+userRouter.post("/transcript/save", auth, saveTranscriptHandle);
+userRouter.post("/transcript/soap/:id", auth, convertToSoapHandle);
+userRouter.post(
+  "/transcribe/file",
+  auth,
+  setUploadPath("transcribe"),
+  upload.single("file"),
+  transcribeFileHandle
+);
 
+userRouter.post("/generate/ai-notes/:id", auth, generateAiNotesHandle);
+userRouter.post("/generate/ai-summary/:id", auth, generateNotesSummaryHandle);
 
 export default userRouter;
