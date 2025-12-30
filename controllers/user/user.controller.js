@@ -9,7 +9,7 @@ import Program from "../../models/program/program.js";
 import Notification from "../../models/notification/notification.js";
 import Language from "../../models/language/language.js";
 import Faq from "../../models/faq/faq.js";
-import Transcription from "../../models/transcription/Transcription.js";
+import Transcription from "../../models/transcription/transcription.js";
 
 import { allowedLanguages } from "../../utils/helpers.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
