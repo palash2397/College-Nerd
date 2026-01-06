@@ -13,10 +13,13 @@ const userSchema = new mongoose.Schema(
             required: true,
             unique: true,
         },
+        countryCode:{
+            type: String,
+            required: true,
+        },
         phoneNumber: {
             type: String,
             required: [true, 'Phone number is required'],
-            unique: true,
             trim: true
         },
         program: {

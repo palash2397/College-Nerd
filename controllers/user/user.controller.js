@@ -31,11 +31,13 @@ import {
 
 export const registerHandle = async (req, res) => {
   try {
-    const { name, email, phoneNumber, password, program } = req.body;
+    const { name, email, countryCode, phoneNumber, password, program } =
+      req.body;
     const schema = Joi.object({
       name: Joi.string().required(),
       email: Joi.string().required(),
       phoneNumber: Joi.string().required(),
+      countryCode: Joi.string().required(),
       password: Joi.string().min(8).required().messages({
         "string.min": "Password must be at least 8 characters long",
         "string.empty": "Password is required",
@@ -52,24 +54,22 @@ export const registerHandle = async (req, res) => {
         .json(new ApiResponse(400, {}, error.details[0].message));
 
     const existingUser = await User.findOne({
-      $or: [{ email }, { phoneNumber }],
+      $or: [
+        { email: email.toLowerCase() },
+        { phoneNumber: phoneNumber, countryCode: countryCode },
+      ],
     });
+
     if (existingUser) {
-      // if (existingUser.isVerified == false) {
-      //   const otp = generateOtp();
-      //   existingUser.otp = otp;
-      //   await existingUser.save();
-      //   await sendOtpMail(otp, existingUser.email);
-
-      //   console.log(`Resend OTP ${otp}`);
-      //   return res
-      //     .status(201)
-      //     .json(
-      //       new ApiResponse(200, { userId: existingUser._id }, Msg.OTP_RESENT)
-      //     );
-      // }
-
-      return res.status(401).json(new ApiResponse(400, {}, Msg.USER_EXISTS));
+      let errorField = "User with the same ";
+      if (existingUser.email === email.toLowerCase()) {
+        errorField += "email already exists";
+      } else if (existingUser.phoneNumber === phoneNumber) {
+        errorField += "phone number already exists";
+      } else {
+        errorField = "User already exists";
+      }
+      return res.status(400).json(new ApiResponse(400, {}, errorField));
     }
 
     const otp = generateOtp();
@@ -83,6 +83,7 @@ export const registerHandle = async (req, res) => {
       phoneNumber,
       password,
       program,
+      countryCode,
       otp,
       otpExpireAt,
     });
@@ -453,15 +454,17 @@ export const myProfileHandle = async (req, res) => {
         .status(400)
         .json(new ApiResponse(400, {}, Msg.ACCOUNT_DEACTIVATED));
 
-    const lectureCount = await Lecture.countDocuments({user: req.user.id})
+    const lectureCount = await Lecture.countDocuments({ user: req.user.id });
     user.avatar = user.avatar
       ? `${process.env.BASE_URL}/profile/${user.avatar}`
       : `${process.env.DEFAULT_PROFILE_PIC}`;
 
-     const userObj = user.toObject();
-     userObj.lectureCount = lectureCount;
+    const userObj = user.toObject();
+    userObj.lectureCount = lectureCount;
 
-    return res.status(200).json(new ApiResponse(200, userObj, Msg.DATA_FETCHED));
+    return res
+      .status(200)
+      .json(new ApiResponse(200, userObj, Msg.DATA_FETCHED));
   } catch (error) {
     console.log(`Error while fetching profile :`, error);
     return res.status(501).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
@@ -777,7 +780,7 @@ export const transcribeFileHandle = async (req, res) => {
       return res.status(400).json(new ApiResponse(400, {}, Msg.DATA_REQUIRED));
     }
 
-    console.log("-------->",req.user)
+    console.log("-------->", req.user);
     const filePath = req.file.path;
     const formData = new FormData();
     formData.append(
@@ -803,19 +806,22 @@ export const transcribeFileHandle = async (req, res) => {
       sourceType: "recording",
     });
 
-
-   const transcriptionData = await Transcription.create({
+    const transcriptionData = await Transcription.create({
       user: req.user.id,
       sessionId: transcription.session_id,
       lectureId: lecture._id,
       text: transcription.transcript,
     });
 
-   
-
     return res
       .status(200)
-      .json(new ApiResponse(200, {transcriptionId: transcriptionData._id, transcription  }, Msg.DATA_GENERATED));
+      .json(
+        new ApiResponse(
+          200,
+          { transcriptionId: transcriptionData._id, transcription },
+          Msg.DATA_GENERATED
+        )
+      );
   } catch (error) {
     console.log("Error while transcribing file", error);
 
@@ -827,7 +833,6 @@ export const generateAiNotesHandle = async (req, res) => {
   try {
     const { id } = req.params; // transcriptionId
 
-   
     const schema = Joi.object({
       id: Joi.string().required(),
     });
@@ -843,25 +848,16 @@ export const generateAiNotesHandle = async (req, res) => {
     const transcription = await Transcription.findById(id);
 
     if (!transcription) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
     }
 
     // 2️⃣ Ensure lecture exists
     const lecture = await Lecture.findById(transcription.lectureId);
 
     if (!lecture) {
-      return res.status(404).json(
-        new ApiResponse(
-          404,
-          {},
-         Msg.DATA_NOT_FOUND
-        )
-      );
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
     }
 
-   
     let existingNotes = await Notes.findOne({
       lectureId: lecture._id,
       transcriptId: transcription._id,
@@ -881,7 +877,6 @@ export const generateAiNotesHandle = async (req, res) => {
       );
     }
 
-   
     const response = await axios.post(
       "https://python.aitechnotech.in/ai-notes/generate-structured-notes",
       {
@@ -892,16 +887,9 @@ export const generateAiNotesHandle = async (req, res) => {
     const aiNotes = response.data;
 
     if (!aiNotes) {
-      return res.status(500).json(
-        new ApiResponse(
-          500,
-          {},
-          Msg.DATA_NOT_FOUND
-        )
-      );
+      return res.status(500).json(new ApiResponse(500, {}, Msg.DATA_NOT_FOUND));
     }
 
-    
     const notes = await Notes.create({
       lectureId: lecture._id,
       transcriptId: transcription._id,
@@ -913,8 +901,6 @@ export const generateAiNotesHandle = async (req, res) => {
       status: "generated",
     });
 
-  
-
     return res.status(200).json(
       new ApiResponse(
         200,
@@ -922,7 +908,7 @@ export const generateAiNotesHandle = async (req, res) => {
           transcription,
           notes,
         },
-       Msg.DATA_GENERATED
+        Msg.DATA_GENERATED
       )
     );
   } catch (error) {
@@ -934,9 +920,8 @@ export const generateAiNotesHandle = async (req, res) => {
 
 export const generateNotesSummaryHandle = async (req, res) => {
   try {
-       const { id } = req.params; 
+    const { id } = req.params;
 
- 
     const schema = Joi.object({
       id: Joi.string().required(),
     });
@@ -948,29 +933,19 @@ export const generateNotesSummaryHandle = async (req, res) => {
         .json(new ApiResponse(400, {}, error.details[0].message));
     }
 
-    
     const transcription = await Transcription.findById(id);
 
     if (!transcription) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
     }
 
     // 2️⃣ Ensure lecture exists
     const lecture = await Lecture.findById(transcription.lectureId);
 
     if (!lecture) {
-      return res.status(404).json(
-        new ApiResponse(
-          404,
-          {},
-         Msg.DATA_NOT_FOUND
-        )
-      );
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
     }
 
-    
     let existingSummary = await Summary.findOne({
       lectureId: lecture._id,
       transcriptId: transcription._id,
@@ -985,7 +960,7 @@ export const generateNotesSummaryHandle = async (req, res) => {
             transcription,
             summary: existingSummary,
           },
-         Msg.DATA_ALREADY_EXISTS
+          Msg.DATA_ALREADY_EXISTS
         )
       );
     }
@@ -1001,16 +976,9 @@ export const generateNotesSummaryHandle = async (req, res) => {
     const summaryData = response.data?.summary || response.data;
 
     if (!summaryData) {
-      return res.status(500).json(
-        new ApiResponse(
-          500,
-          {},
-         Msg.DATA_NOT_FOUND
-        )
-      );
+      return res.status(500).json(new ApiResponse(500, {}, Msg.DATA_NOT_FOUND));
     }
 
-  
     const summary = await Summary.create({
       lectureId: lecture._id,
       transcriptId: transcription._id,
@@ -1022,7 +990,6 @@ export const generateNotesSummaryHandle = async (req, res) => {
       status: "generated",
     });
 
-
     await lecture.save();
 
     return res.status(200).json(
@@ -1032,7 +999,7 @@ export const generateNotesSummaryHandle = async (req, res) => {
           transcription,
           summary,
         },
-       Msg.DATA_GENERATED
+        Msg.DATA_GENERATED
       )
     );
   } catch (error) {
