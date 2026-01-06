@@ -108,3 +108,89 @@ export const userLecturesHandle = async (req, res) => {
     return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
+
+
+export const notesbyTranscriptIdHandle = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const schema = Joi.object({
+      id: Joi.string().required(),
+    });
+
+    const { error } = schema.validate({ id });
+    if (error) {
+      return res.status(400).json(new ApiResponse(400, {}, error.details[0].message));
+    }
+
+    const notes = await Notes.find({ transcriptId: id, user: req.user.id }).lean();
+
+    if (!notes || notes.length === 0) {
+      return res.status(200).json(new ApiResponse(200, [], Msg.DATA_NOT_FOUND));
+    }
+
+    return res.status(200).json(new ApiResponse(200, notes, Msg.DATA_FETCHED));
+  } catch (error) {
+    console.log("Error fetching notes", error);
+
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+export const summarybyTranscriptIdHandle = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const schema = Joi.object({
+      id: Joi.string().required(),
+    });
+
+    const { error } = schema.validate({ id });
+    if (error) {
+      return res.status(400).json(new ApiResponse(400, {}, error.details[0].message));
+    }
+
+    const summary = await Summary.find({ transcriptId: id, user: req.user.id }).lean();
+
+    if (!summary || summary.length === 0) {
+      return res.status(200).json(new ApiResponse(200, [], Msg.DATA_NOT_FOUND));
+    }
+
+    return res.status(200).json(new ApiResponse(200, summary, Msg.DATA_FETCHED));
+  } catch (error) {
+    console.log("Error fetching summary", error);
+
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+export const allNotesHandle = async (req, res) => {
+  try {
+    const notes = await Notes.find({ user: req.user.id }).lean();
+
+    if (!notes || notes.length === 0) {
+      return res.status(200).json(new ApiResponse(200, [], Msg.DATA_NOT_FOUND));
+    }
+
+    return res.status(200).json(new ApiResponse(200, notes, Msg.DATA_FETCHED));
+  } catch (error) {
+    console.log("Error fetching notes", error);
+
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+export const allSummaryHandle = async (req, res) => {
+  try {
+    const summary = await Summary.find({ user: req.user.id }).lean();
+
+    if (!summary || summary.length === 0) {
+      return res.status(200).json(new ApiResponse(200, [], Msg.DATA_NOT_FOUND));
+    }
+
+    return res.status(200).json(new ApiResponse(200, summary, Msg.DATA_FETCHED));
+  } catch (error) {
+    console.log("Error fetching summary", error);
+
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
