@@ -804,7 +804,7 @@ export const transcribeFileHandle = async (req, res) => {
     });
 
 
-    await Transcription.create({
+   const transcriptionData = await Transcription.create({
       user: req.user.id,
       sessionId: transcription.session_id,
       lectureId: lecture._id,
@@ -815,7 +815,7 @@ export const transcribeFileHandle = async (req, res) => {
 
     return res
       .status(200)
-      .json(new ApiResponse(200, { transcription }, Msg.DATA_GENERATED));
+      .json(new ApiResponse(200, {transcriptionId: transcriptionData._id, transcription  }, Msg.DATA_GENERATED));
   } catch (error) {
     console.log("Error while transcribing file", error);
 
