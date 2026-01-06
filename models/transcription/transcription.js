@@ -19,6 +19,12 @@ const transcriptionSchema = new mongoose.Schema(
       trim: true,
     },
 
+    lectureId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Lecture",
+      required: true,
+    },
+
     status: {
       type: String,
       enum: ["approved", "draft", "deleted"],
