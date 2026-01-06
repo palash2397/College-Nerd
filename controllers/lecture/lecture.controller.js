@@ -14,6 +14,7 @@ import Summary from "../../models/lecture/summary/summary.js";
 import { allowedLanguages } from "../../utils/helpers.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { Msg } from "../../utils/responseMsg.js";
+import { title } from "process";
 
 export const lectureDetails = async (req, res) => {
   try {
@@ -92,6 +93,7 @@ export const userLecturesHandle = async (req, res) => {
         sessionId: lec.sessionId,
         status: lec.status,
         courseType: lec.courseType,
+        title: lec.title,
         moduleType: lec.moduleType,
         sourceType: lec.sourceType,
         createdAt: lec.createdAt,

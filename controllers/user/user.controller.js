@@ -453,12 +453,15 @@ export const myProfileHandle = async (req, res) => {
         .status(400)
         .json(new ApiResponse(400, {}, Msg.ACCOUNT_DEACTIVATED));
 
-    // If avatar is a Cloudinary URL, use as is, else fallback
+    const lectureCount = await Lecture.countDocuments({user: req.user.id})
     user.avatar = user.avatar
       ? `${process.env.BASE_URL}/profile/${user.avatar}`
       : `${process.env.DEFAULT_PROFILE_PIC}`;
 
-    return res.status(200).json(new ApiResponse(200, user, Msg.DATA_FETCHED));
+     const userObj = user.toObject();
+     userObj.lectureCount = lectureCount;
+
+    return res.status(200).json(new ApiResponse(200, userObj, Msg.DATA_FETCHED));
   } catch (error) {
     console.log(`Error while fetching profile :`, error);
     return res.status(501).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
