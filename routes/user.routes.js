@@ -20,7 +20,9 @@ import {
   convertToSoapHandle,
   transcribeFileHandle,
   generateAiNotesHandle,
-  generateNotesSummaryHandle
+  generateNotesSummaryHandle,
+  submitFeedbackHandle,
+  userFeedbackHandle
 } from "../controllers/user/user.controller.js";
 import { auth } from "../middlewares/auth.js";
 import { setUploadPath } from "../utils/helpers.js";
@@ -59,6 +61,9 @@ userRouter.post(
   upload.single("file"),
   transcribeFileHandle
 );
+
+userRouter.post("/feedback", auth, submitFeedbackHandle);
+userRouter.get("/feedback", auth, userFeedbackHandle);
 
 userRouter.post("/generate/ai-notes/:id", auth, generateAiNotesHandle);
 userRouter.post("/generate/ai-summary/:id", auth, generateNotesSummaryHandle);

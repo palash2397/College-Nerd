@@ -13,6 +13,7 @@ import Transcription from "../../models/transcription/transcription.js";
 import Lecture from "../../models/lecture/lecture.js";
 import Notes from "../../models/lecture/notes/notes.js";
 import Summary from "../../models/lecture/summary/summary.js";
+import Feedback from "../../models/feedback/feedback.js";
 
 import { allowedLanguages } from "../../utils/helpers.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
@@ -22,6 +23,7 @@ import {
   getExpirationTime,
   deleteOldImages,
   allowedFields,
+  formatDate
 } from "../../utils/helpers.js";
 import {
   sendOtpMail,
@@ -1026,3 +1028,56 @@ export const generateNotesSummaryHandle = async (req, res) => {
     return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
+
+export const submitFeedbackHandle = async (req, res) => {
+  try {
+    const { rating, review, source } = req.body;
+
+    const schema = Joi.object({
+      rating: Joi.number().min(1).max(5).required(),
+      review: Joi.string().allow(null, "").optional(),
+      source: Joi.string().valid("app", "web").optional(),
+    });
+
+    const { error } = schema.validate(req.body);
+    if (error)
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, error.details[0].message));
+
+    const feedback = await Feedback.create({
+      user: req.user.id,
+      rating,
+      review: review || null,
+      source: source || "app",
+    });
+
+    return res.status(200).json(new ApiResponse(200, feedback, Msg.DATA_ADDED));
+  } catch (err) {
+    console.log("Feedback submit error", err);
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+
+export const userFeedbackHandle = async (req, res) => {
+  try {
+    const feedbacks = await Feedback.find({ user: req.user.id })
+      .sort({ createdAt: -1 }).select("-updatedAt -__v")
+
+
+    feedbacks.forEach((feedback) => {
+      feedback.createdAt = formatDate(feedback.createdAt);
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, feedbacks, Msg.DATA_FETCHED));
+  } catch (err) {
+    console.log("Fetch feedback error", err);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
