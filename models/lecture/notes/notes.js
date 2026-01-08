@@ -23,7 +23,7 @@ const LectureNotesSchema = new mongoose.Schema(
       required: true,
     },
 
-    // store AI output as structured JSON
+   
     notesAi: {
       type: Object,
       required: true,

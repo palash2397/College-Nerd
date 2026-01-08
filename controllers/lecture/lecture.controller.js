@@ -14,9 +14,9 @@ import Summary from "../../models/lecture/summary/summary.js";
 import McqAttempt from "../../models/lecture/mcq/mcq.js";
 import Transcript from "../../models/transcript/transcript.js";
 
-
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { Msg } from "../../utils/responseMsg.js";
+import { deleteFile, generatePdf } from "../../utils/helpers.js";
 
 export const lectureDetails = async (req, res) => {
   try {
@@ -505,88 +505,225 @@ export const resultMcqHandle = async (req, res) => {
 };
 
 export const transcriptAudioFileHandle = async (req, res) => {
+  let filePath;
   try {
-
-    console.log("req.user", req.user);
     const { id } = req.params;
     const schema = Joi.object({
       id: Joi.string().required(),
     });
 
-    // const { error } = schema.validate({ id });
-    // if (error) {
-    //   return res
-    //     .status(400)
-    //     .json(new ApiResponse(400, {}, error.details[0].message));
-    // }
-    // if (!req.file) {
-    //   return res.status(400).json(new ApiResponse(400, {}, Msg.DATA_REQUIRED));
-    // }
+    const { error } = schema.validate({ id });
+    if (error) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, error.details[0].message));
+    }
+    if (!req.file) {
+      return res.status(400).json(new ApiResponse(400, {}, Msg.DATA_REQUIRED));
+    }
 
-    // const transcription = await Transcription.findById(id);
-    // if (!transcription) {
-    //   return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
-    // }
+    const transcription = await Transcription.findById(id);
+    if (!transcription) {
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+    }
 
-    // console.log("-------->", req.user);
-    // const filePath = req.file.path;
-    // const formData = new FormData();
-    // formData.append(
-    //   "file",
-    //   fs.createReadStream(filePath),
-    //   req.file.originalname
-    // );
+    console.log("-------->", req.user);
+    filePath = req.file.path;
+    const formData = new FormData();
+    formData.append(
+      "file",
+      fs.createReadStream(filePath),
+      req.file.originalname
+    );
 
-    // const response = await axios.post(
-    //   "https://python.aitechnotech.in/timestamp/upload-audio",
-    //   formData,
-    //   { headers: formData.getHeaders() }
-    // );
+    const response = await axios.post(
+      "https://python.aitechnotech.in/timestamp/upload-audio",
+      formData,
+      { headers: formData.getHeaders() }
+    );
 
-    // console.log("response", response.data);
+    console.log("response", response.data);
 
-    // const aiData = response.data;
+    const aiData = response.data;
 
-    // // 3️⃣ Prepare timed transcript payload
-    // const timedTranscriptPayload = {
-    //   status: aiData.status,
-    //   totalSegments: aiData.total_segments,
-    //   duration: aiData.duration,
-    //   segments: aiData.data.map((seg) => ({
-    //     time: seg.time,
-    //     speaker: seg.speaker,
-    //     text: seg.text,
-    //   })),
-    // };
+    // 3️⃣ Prepare timed transcript payload
+    const timedTranscriptPayload = {
+      status: aiData.status,
+      totalSegments: aiData.total_segments,
+      duration: aiData.duration,
+      segments: aiData.data.map((seg) => ({
+        time: seg.time,
+        speaker: seg.speaker,
+        text: seg.text,
+      })),
+    };
 
-    // const transcript = await Transcript.findOneAndUpdate(
-    //   { transcriptId: id },
-    //   {
-    //     user: req.user.id,
-    //     transcriptId: id,
-    //     text: transcription.text, // copy plain text
-    //     timedTranscript: timedTranscriptPayload,
-    //     status: "approved",
-    //   },
-    //   { upsert: true, new: true }
-    // );
+    const transcript = await Transcript.findOneAndUpdate(
+      { transcriptId: id },
+      {
+        user: req.user.id,
+        transcriptId: id,
+        text: transcription.text, // copy plain text
+        timedTranscript: timedTranscriptPayload,
+        status: "approved",
+      },
+      { upsert: true, new: true }
+    );
 
-    // return res.status(200).json(
-    //   new ApiResponse(
-    //     200,
-    //     {
-    //       transcriptId: transcript._id,
-    //       status: aiData.status,
-    //       total_segments: aiData.total_segments,
-    //       duration: aiData.duration,
-    //       data: aiData.data,
-    //     },
-    //     Msg.DATA_GENERATED
-    //   )
-    // );
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          transcriptId: id,
+          status: aiData.status,
+          total_segments: aiData.total_segments,
+          duration: aiData.duration,
+          data: aiData.data,
+        },
+        Msg.DATA_GENERATED
+      )
+    );
   } catch (error) {
     console.log("Error while transcribing file", error);
 
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  } finally {
+    deleteFile(filePath);
+  }
+};
+
+export const transcriptHandle = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const schema = Joi.object({
+      id: Joi.string().required(),
+    });
+
+    const { error } = schema.validate({ id });
+    if (error) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, error.details[0].message));
+    }
+
+    const transcript = await Transcript.findOne({ transcriptId: id }).select(
+      "-__v -updatedAt -createdAt -text"
+    );
+    if (!transcript) {
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, transcript, Msg.DATA_FETCHED));
+  } catch (error) {
+    console.log("Error while handling transcript", error);
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  } finally {
+    deleteFile(filePath);
+  }
+};
+
+export const lecturePdfHandle = async (req, res) => {
+  try {
+    const { id, flag } = req.body;
+
+    const schema = Joi.object({
+      id: Joi.string().required(),
+      flag: Joi.string().valid("transcript", "notes", "summary").required(),
+    });
+
+    const { error } = schema.validate({ id, flag });
+    if (error) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, error.details[0].message));
+    }
+
+    // -------------------------------
+    // TRANSCRIPT PDF
+    // -------------------------------
+    if (flag === "transcript") {
+      const transcription = await Transcription.findById(id);
+
+      if (!transcription) {
+        return res
+          .status(404)
+          .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+      }
+
+      return generatePdf(
+        {
+          title: "Lecture Transcript",
+          subtitle: "Transcription Output",
+          content: transcription.text,
+        },
+        res
+      );
+    }
+
+    // -------------------------------
+    // SUMMARY PDF
+    // -------------------------------
+    if (flag === "summary") {
+      const summary = await Summary.findOne({ transcriptId: id });
+
+      if (!summary) {
+        return res
+          .status(404)
+          .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+      }
+
+      return generatePdf(
+        {
+          title: "Lecture Summary",
+          subtitle: "Summary Output",
+          content: summary.summaryAi,
+        },
+        res
+      );
+    }
+
+    // -------------------------------
+    // NOTES PDF
+    // -------------------------------
+    if (flag === "notes") {
+      const notes = await Notes.findOne({ transcriptId: id });
+
+      if (!notes) {
+        return res
+          .status(404)
+          .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+      }
+
+      const n = notes.notesAi;
+
+      const content = `
+${n.title}
+
+${n.description}
+
+Key Features:
+${n.key_features.map((f) => `- ${f}`).join("\n")}
+
+Advantages:
+${n.advantages.map((a) => `- ${a}`).join("\n")}
+
+Limitations:
+${n.limitations.map((l) => `- ${l}`).join("\n")}
+      `;
+
+      return generatePdf(
+        {
+          title: "Lecture Notes",
+          subtitle: "Notes Output",
+          content,
+        },
+        res
+      );
+    }
+  } catch (error) {
+    console.error("Lecture PDF error", error);
     return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };

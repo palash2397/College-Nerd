@@ -22,7 +22,8 @@ import {
   generateAiNotesHandle,
   generateNotesSummaryHandle,
   submitFeedbackHandle,
-  userFeedbackHandle
+  userFeedbackHandle,
+  saveMedicalScribetHandle
 } from "../controllers/user/user.controller.js";
 import { auth } from "../middlewares/auth.js";
 import { setUploadPath } from "../utils/helpers.js";
@@ -53,6 +54,7 @@ userRouter.patch("/language", auth, updateLanguageHandle);
 userRouter.post("/contact", auth, contactUsHandle);
 userRouter.get("/faq", auth, getFaqHandle);
 userRouter.post("/transcript/save", auth, saveTranscriptHandle);
+userRouter.post("/medical-scribe/save", auth, saveMedicalScribetHandle);
 userRouter.post("/transcript/soap/:id", auth, convertToSoapHandle);
 userRouter.post(
   "/transcribe/file",

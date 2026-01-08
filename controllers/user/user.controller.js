@@ -14,6 +14,7 @@ import Lecture from "../../models/lecture/lecture.js";
 import Notes from "../../models/lecture/notes/notes.js";
 import Summary from "../../models/lecture/summary/summary.js";
 import Feedback from "../../models/feedback/feedback.js";
+import MedicalScribe from "../../models/medicalCribe/medicalScribe.js";
 
 import { allowedLanguages } from "../../utils/helpers.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
@@ -729,6 +730,38 @@ export const saveTranscriptHandle = async (req, res) => {
   }
 };
 
+export const saveMedicalScribetHandle = async (req, res) => {
+  try {
+    const { text } = req.body;
+    const schema = Joi.object({
+      text: Joi.string().trim().required(),
+    });
+
+    const { error } = schema.validate(req.body);
+    if (error)
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, error.details[0].message));
+
+   
+
+    const transcription = await MedicalScribe.create({
+      user: req.user.id,
+      text,
+      status: "approved",
+ 
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, transcription, Msg.DATA_ADDED));
+  } catch (error) {
+    console.log("Error saving transcription", error);
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+
 export const convertToSoapHandle = async (req, res) => {
   try {
     const { id } = req.params;
@@ -742,7 +775,7 @@ export const convertToSoapHandle = async (req, res) => {
         .status(400)
         .json(new ApiResponse(400, {}, error.details[0].message));
 
-    const data = await Transcription.findById(id).select(
+    const data = await MedicalScribe.findById(id).select(
       "-createdAt -updatedAt -__v"
     );
     console.log("data ----------->", data);
