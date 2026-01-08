@@ -1,7 +1,7 @@
 import fs from "fs";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
-import OpenAI from "openai";
+// import OpenAI from "openai";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -42,9 +42,9 @@ export const allowedFields = [
 
 export const allowedLanguages = ["en", "fr", "es"];
 
-export const openai = new OpenAI({
-  apiKey: process.env.OPENAI_KEY,
-});
+// export const openai = new OpenAI({
+//   apiKey: process.env.OPENAI_KEY,
+// });
 
 export const formatDate = (dateString) => {
   if (!dateString) return "";

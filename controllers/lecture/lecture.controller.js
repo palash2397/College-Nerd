@@ -13,7 +13,7 @@ import Notes from "../../models/lecture/notes/notes.js";
 import Summary from "../../models/lecture/summary/summary.js";
 import McqAttempt from "../../models/lecture/mcq/mcq.js";
 import Transcript from "../../models/transcript/transcript.js";
-// import { openai } from "../../utils/helpers.js";
+
 
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { Msg } from "../../utils/responseMsg.js";
