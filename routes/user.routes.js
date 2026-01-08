@@ -44,7 +44,7 @@ userRouter.post(
   upload.single("avatar"),
   updateProfileHandle
 );
-userRouter.get("/profile", auth, myProfileHandle);
+userRouter.get("/my-profile", auth, myProfileHandle);
 userRouter.get("/programs", allProgramsHandle);
 userRouter.get("/notifications", auth, allNotifications);
 userRouter.patch("/notification-setting", auth, updateNotificationSettings);

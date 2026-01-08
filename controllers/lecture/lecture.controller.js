@@ -12,6 +12,7 @@ import Lecture from "../../models/lecture/lecture.js";
 import Notes from "../../models/lecture/notes/notes.js";
 import Summary from "../../models/lecture/summary/summary.js";
 import McqAttempt from "../../models/lecture/mcq/mcq.js";
+import Transcript from "../../models/transcript/transcript.js";
 // import { openai } from "../../utils/helpers.js";
 
 import { ApiResponse } from "../../utils/ApiResponse.js";
@@ -401,7 +402,6 @@ export const generateTranscriptCardsHandle = async (req, res) => {
       }
     );
 
-    
     const cards = response.data;
 
     if (!cards) {
@@ -413,7 +413,7 @@ export const generateTranscriptCardsHandle = async (req, res) => {
         200,
         {
           transcription,
-          cards
+          cards,
         },
         Msg.DATA_GENERATED
       )
@@ -424,7 +424,6 @@ export const generateTranscriptCardsHandle = async (req, res) => {
     return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
-
 
 export const submitMcqHandle = async (req, res) => {
   try {
@@ -448,21 +447,14 @@ export const submitMcqHandle = async (req, res) => {
       status: "submitted",
     });
 
-    return res.status(200).json(
-      new ApiResponse(
-        200,
-        { attemptId: attempt._id },
-        Msg.DATA_ADDED
-      )
-    );
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { attemptId: attempt._id }, Msg.DATA_ADDED));
   } catch (err) {
     console.log("MCQ submit error", err);
-    return res
-      .status(500)
-      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
-
 
 export const resultMcqHandle = async (req, res) => {
   try {
@@ -474,20 +466,17 @@ export const resultMcqHandle = async (req, res) => {
     });
 
     if (!attempt)
-      return res
-        .status(404)
-        .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
 
-  
     if (attempt.status === "evaluated") {
-      return res.status(200).json(
-        new ApiResponse(200, attempt, Msg.DATA_FETCHED)
-      );
+      return res
+        .status(200)
+        .json(new ApiResponse(200, attempt, Msg.DATA_FETCHED));
     }
 
     let correct = 0;
 
-    attempt.questions = attempt.questions.map(q => {
+    attempt.questions = attempt.questions.map((q) => {
       const isCorrect = q.userAnswer === q.correctAnswer;
       if (isCorrect) correct++;
 
@@ -498,7 +487,6 @@ export const resultMcqHandle = async (req, res) => {
     const wrong = total - correct;
     const percent = Math.round((correct / total) * 100);
 
-    
     attempt.totalQuestions = total;
     attempt.correctCount = correct;
     attempt.wrongCount = wrong;
@@ -507,17 +495,98 @@ export const resultMcqHandle = async (req, res) => {
 
     await attempt.save();
 
-    return res.status(200).json(
-      new ApiResponse(
-        200,
-        attempt,
-        Msg.DATA_FETCHED
-      )
-    );
+    return res
+      .status(200)
+      .json(new ApiResponse(200, attempt, Msg.DATA_FETCHED));
   } catch (err) {
     console.log("Evaluate MCQ error", err);
-    return res
-      .status(500)
-      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+export const transcriptAudioFileHandle = async (req, res) => {
+  try {
+
+    console.log("req.user", req.user);
+    const { id } = req.params;
+    const schema = Joi.object({
+      id: Joi.string().required(),
+    });
+
+    // const { error } = schema.validate({ id });
+    // if (error) {
+    //   return res
+    //     .status(400)
+    //     .json(new ApiResponse(400, {}, error.details[0].message));
+    // }
+    // if (!req.file) {
+    //   return res.status(400).json(new ApiResponse(400, {}, Msg.DATA_REQUIRED));
+    // }
+
+    // const transcription = await Transcription.findById(id);
+    // if (!transcription) {
+    //   return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+    // }
+
+    // console.log("-------->", req.user);
+    // const filePath = req.file.path;
+    // const formData = new FormData();
+    // formData.append(
+    //   "file",
+    //   fs.createReadStream(filePath),
+    //   req.file.originalname
+    // );
+
+    // const response = await axios.post(
+    //   "https://python.aitechnotech.in/timestamp/upload-audio",
+    //   formData,
+    //   { headers: formData.getHeaders() }
+    // );
+
+    // console.log("response", response.data);
+
+    // const aiData = response.data;
+
+    // // 3️⃣ Prepare timed transcript payload
+    // const timedTranscriptPayload = {
+    //   status: aiData.status,
+    //   totalSegments: aiData.total_segments,
+    //   duration: aiData.duration,
+    //   segments: aiData.data.map((seg) => ({
+    //     time: seg.time,
+    //     speaker: seg.speaker,
+    //     text: seg.text,
+    //   })),
+    // };
+
+    // const transcript = await Transcript.findOneAndUpdate(
+    //   { transcriptId: id },
+    //   {
+    //     user: req.user.id,
+    //     transcriptId: id,
+    //     text: transcription.text, // copy plain text
+    //     timedTranscript: timedTranscriptPayload,
+    //     status: "approved",
+    //   },
+    //   { upsert: true, new: true }
+    // );
+
+    // return res.status(200).json(
+    //   new ApiResponse(
+    //     200,
+    //     {
+    //       transcriptId: transcript._id,
+    //       status: aiData.status,
+    //       total_segments: aiData.total_segments,
+    //       duration: aiData.duration,
+    //       data: aiData.data,
+    //     },
+    //     Msg.DATA_GENERATED
+    //   )
+    // );
+  } catch (error) {
+    console.log("Error while transcribing file", error);
+
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };

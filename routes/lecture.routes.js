@@ -10,8 +10,11 @@ import {
   generateTranscriptCardsHandle,
   submitMcqHandle,
   resultMcqHandle,
+  transcriptAudioFileHandle
 } from "../controllers/lecture/lecture.controller.js";
 import { auth } from "../middlewares/auth.js";
+import { setUploadPath } from "../utils/helpers.js";
+import { upload } from "../middlewares/multer.js";
 
 const lectureRouter = Router();
 
@@ -24,5 +27,6 @@ lectureRouter.post("/generate-mcq/:id", auth, generateTranscriptMcqHandle);
 lectureRouter.post("/generate-card/:id", auth, generateTranscriptCardsHandle);
 lectureRouter.post("/submit-mcq", auth, submitMcqHandle);
 lectureRouter.get("/result-mcq/:id", auth, resultMcqHandle);
+lectureRouter.post("/transcript-audio", auth, setUploadPath("transcript"), upload.single("file"), transcriptAudioFileHandle);
 
 export default lectureRouter;
