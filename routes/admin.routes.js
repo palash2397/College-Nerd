@@ -11,6 +11,7 @@ import {
   updateLegalMessage,
   allUserHandle,
   userByIdHandle,
+  deactivatAccountHandle
 } from "../controllers/admin/admin.controller.js";
 import { auth, isAdmin } from "../middlewares/auth.js";
 
@@ -25,5 +26,6 @@ adminRouter.patch("/policy", auth, isAdmin, updateLegalMessage);
 adminRouter.get("/policy/:type", auth, getLegalMessage);
 adminRouter.get("/users/all", auth, isAdmin, allUserHandle);
 adminRouter.get("/user/:id", auth, isAdmin, userByIdHandle)
+adminRouter.patch("/user/deactivate/:id", auth, isAdmin, deactivatAccountHandle)
 
 export default adminRouter;

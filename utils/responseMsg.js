@@ -15,7 +15,10 @@ export const Msg = {
   ACCOUNT_DEACTIVATED: `Account has been temporarily deactivated`,
   ACCOUNT_VERIFIED: `User account verified successfully.`,
 
-
+  
+  // Admin
+  USER_ACCOUNT_DEACTIVATED: `Account has been deactivated successfully`,
+  
   // Authentication
   INVALID_CREDENTIALS: `Invalid Credentials`,
   LOGIN_SUCCESS: `Login successful`,

@@ -23,7 +23,8 @@ import {
   generateNotesSummaryHandle,
   submitFeedbackHandle,
   userFeedbackHandle,
-  saveMedicalScribetHandle
+  saveMedicalScribetHandle,
+  allUsersFeedbackHandle
 } from "../controllers/user/user.controller.js";
 import { auth } from "../middlewares/auth.js";
 import { setUploadPath } from "../utils/helpers.js";
@@ -66,6 +67,7 @@ userRouter.post(
 
 userRouter.post("/feedback", auth, submitFeedbackHandle);
 userRouter.get("/feedback", auth, userFeedbackHandle);
+userRouter.get("/feedback/all", auth, allUsersFeedbackHandle);
 
 userRouter.post("/generate/ai-notes/:id", auth, generateAiNotesHandle);
 userRouter.post("/generate/ai-summary/:id", auth, generateNotesSummaryHandle);

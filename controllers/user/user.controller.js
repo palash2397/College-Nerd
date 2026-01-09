@@ -24,7 +24,7 @@ import {
   getExpirationTime,
   deleteOldImages,
   allowedFields,
-  formatDate
+  formatDate,
 } from "../../utils/helpers.js";
 import {
   sendOtpMail,
@@ -743,13 +743,10 @@ export const saveMedicalScribetHandle = async (req, res) => {
         .status(400)
         .json(new ApiResponse(400, {}, error.details[0].message));
 
-   
-
     const transcription = await MedicalScribe.create({
       user: req.user.id,
       text,
       status: "approved",
- 
     });
 
     return res
@@ -760,7 +757,6 @@ export const saveMedicalScribetHandle = async (req, res) => {
     return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
-
 
 export const convertToSoapHandle = async (req, res) => {
   try {
@@ -1092,14 +1088,16 @@ export const submitFeedbackHandle = async (req, res) => {
   }
 };
 
-
 export const userFeedbackHandle = async (req, res) => {
   try {
     const feedbacks = await Feedback.find({ user: req.user.id })
-      .sort({ createdAt: -1 }).select("-updatedAt -__v")
-
+      .sort({ createdAt: -1 })
+      .populate("user", "name avatar");
 
     feedbacks.forEach((feedback) => {
+      feedback.user.avatar = feedback.user.avatar
+        ? `${process.env.BASE_URL}/profile/${feedback.user.avatar}`
+        : `${process.env.DEFAULT_PROFILE_PIC}`;
       feedback.createdAt = formatDate(feedback.createdAt);
     });
 
@@ -1108,9 +1106,73 @@ export const userFeedbackHandle = async (req, res) => {
       .json(new ApiResponse(200, feedbacks, Msg.DATA_FETCHED));
   } catch (err) {
     console.log("Fetch feedback error", err);
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+export const allUsersFeedbackHandle = async (req, res) => {
+  try {
+    const page = +req.query.page || 1;
+    const limit = +req.query.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const [reviews, total, stats] = await Promise.all([
+      Feedback.find({ review: { $ne: null } })
+        .populate("user", "name avatar")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .select("rating review user createdAt"),
+
+      Feedback.countDocuments({ review: { $ne: null } }),
+
+      Feedback.aggregate([
+        { $group: { _id: "$rating", count: { $sum: 1 } } },
+      ]),
+    ]);
+
+    const ratings = { 1:0, 2:0, 3:0, 4:0, 5:0 };
+    let ratingSum = 0;
+
+    stats.forEach(s => {
+      ratings[s._id] = s.count;
+      ratingSum += s._id * s.count;
+    });
+
+    const averageRating = total
+      ? +(ratingSum / total).toFixed(1)
+      : 0;
+
+    const ratingBars = Object.fromEntries(
+      Object.entries(ratings).map(([k, v]) => [
+        k,
+        { count: v, percent: total ? +((v / total) * 100).toFixed(1) : 0 },
+      ])
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        summary: {
+          averageRating,
+          totalReviews: total,
+          ratings: ratingBars,
+        },
+        reviews: reviews.map(r => ({
+          rating: r.rating,
+          review: r.review,
+          user: r.user?.name || "Anonymous Review",
+          avatar: r.user?.avatar
+            ? `${process.env.BASE_URL}/profile/${r.user.avatar}`
+            : process.env.DEFAULT_PROFILE_PIC,
+          createdAt: r.createdAt,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching feedbacks:", error);
     return res
       .status(500)
       .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
-

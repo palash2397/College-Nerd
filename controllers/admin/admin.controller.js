@@ -204,3 +204,26 @@ export const userByIdHandle = async (req, res) => {
     return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
+
+export const deactivatAccountHandle = async(req, res)=>{
+  try {
+    const {id} = req.params;
+    const schema = Joi.object({
+      id: Joi.string().required(),
+    });
+    
+    const user = await User.findById(id);
+    if (!user)
+      return res.status(404).json(new ApiResponse(404, {}, Msg.USER_NOT_FOUND));
+    
+    user.isActive = false;
+    await user.save();
+    
+    return res.status(200).json(new ApiResponse(200, {}, Msg.USER_ACCOUNT_DEACTIVATED));
+    
+  } catch (error) {
+    console.log(`error while deactivating account`, error);
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    
+  }
+}
