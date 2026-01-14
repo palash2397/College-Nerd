@@ -1,5 +1,6 @@
 import Faq from "../../models/faq/faq.js";
 import User from "../../models/user/user.js";
+import Lecture from "../../models/lecture/lecture.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { Msg } from "../../utils/responseMsg.js";
 import LegalMessage from "../../models/privacy-policy/police.js";
@@ -216,10 +217,11 @@ export const deactivatAccountHandle = async(req, res)=>{
     if (!user)
       return res.status(404).json(new ApiResponse(404, {}, Msg.USER_NOT_FOUND));
     
-    user.isActive = false;
+    user.isActive = user.isActive ? false : true;
     await user.save();
+    let status = user.isActive ? `activated` : `deactivated`
     
-    return res.status(200).json(new ApiResponse(200, {}, Msg.USER_ACCOUNT_DEACTIVATED));
+    return res.status(200).json(new ApiResponse(200, {}, `Users account ${status} successfully`));
     
   } catch (error) {
     console.log(`error while deactivating account`, error);
@@ -227,3 +229,8 @@ export const deactivatAccountHandle = async(req, res)=>{
     
   }
 }
+
+
+
+
+

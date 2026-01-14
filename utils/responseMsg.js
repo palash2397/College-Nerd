@@ -18,6 +18,7 @@ export const Msg = {
   
   // Admin
   USER_ACCOUNT_DEACTIVATED: `Account has been deactivated successfully`,
+
   
   // Authentication
   INVALID_CREDENTIALS: `Invalid Credentials`,

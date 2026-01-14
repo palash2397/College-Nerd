@@ -11,8 +11,21 @@ import {
   updateLegalMessage,
   allUserHandle,
   userByIdHandle,
-  deactivatAccountHandle
+  deactivatAccountHandle,
 } from "../controllers/admin/admin.controller.js";
+
+import { upload } from "../middlewares/multer.js";
+import { setUploadPath } from "../utils/helpers.js";
+
+import {
+  dashboardHandle,
+  userStatsHandle,
+  latestUsersHandle,
+  addUserHandle,
+  allLecturesHandle
+
+} from "../controllers/admin/dashborad.controller.js";
+
 import { auth, isAdmin } from "../middlewares/auth.js";
 
 const adminRouter = Router();
@@ -25,7 +38,20 @@ adminRouter.post("/policy", auth, isAdmin, legalMessage);
 adminRouter.patch("/policy", auth, isAdmin, updateLegalMessage);
 adminRouter.get("/policy/:type", auth, getLegalMessage);
 adminRouter.get("/users/all", auth, isAdmin, allUserHandle);
-adminRouter.get("/user/:id", auth, isAdmin, userByIdHandle)
-adminRouter.patch("/user/deactivate/:id", auth, isAdmin, deactivatAccountHandle)
+adminRouter.get("/user/:id", auth, isAdmin, userByIdHandle);
+adminRouter.patch(
+  "/user/deactivate/:id",
+  auth,
+  isAdmin,
+  deactivatAccountHandle
+);
+
+// Dashboard
+adminRouter.get("/dashboard", auth, isAdmin, dashboardHandle);
+adminRouter.get("/user-stats", auth, isAdmin, userStatsHandle);
+adminRouter.get("/latest-users", auth, isAdmin, latestUsersHandle);
+adminRouter.post("/add-user", auth, isAdmin, setUploadPath("profile"), upload.single("avatar"), addUserHandle);
+adminRouter.get("/lectures", auth, isAdmin, allLecturesHandle);
+
 
 export default adminRouter;
