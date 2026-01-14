@@ -22,8 +22,8 @@ import {
   userStatsHandle,
   latestUsersHandle,
   addUserHandle,
-  allLecturesHandle
-
+  allLecturesHandle,
+  searchUserHandle
 } from "../controllers/admin/dashborad.controller.js";
 
 import { auth, isAdmin } from "../middlewares/auth.js";
@@ -52,6 +52,7 @@ adminRouter.get("/user-stats", auth, isAdmin, userStatsHandle);
 adminRouter.get("/latest-users", auth, isAdmin, latestUsersHandle);
 adminRouter.post("/add-user", auth, isAdmin, setUploadPath("profile"), upload.single("avatar"), addUserHandle);
 adminRouter.get("/lectures", auth, isAdmin, allLecturesHandle);
+adminRouter.get("/search-user", auth, isAdmin, searchUserHandle);
 
 
 export default adminRouter;

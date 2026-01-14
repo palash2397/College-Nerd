@@ -201,4 +201,62 @@ export const allLecturesHandle = async (req, res) => {
   }
 }
 
-
+export const searchUserHandle = async (req, res) => {
+  try {
+    const { search, page = 1, limit = 10, status, program } = req.query;
+    
+    // Build search query
+    let query = {};
+    
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phoneNumber: { $regex: search, $options: "i" } },
+      ];
+    }
+    
+    // Add filters
+    if (status) {
+      query.isActive = status === 'active' ? true : false;
+    }
+    
+    if (program) {
+      query.program = program;
+    }
+    
+    // Pagination
+    const skip = (page - 1) * limit;
+    
+    // Execute query with pagination
+    const users = await User.find(query)
+      .select("-password -otp -otpExpireAt -__v -googleId -otpVerifiedForResetPassword")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+    
+    // Get total count for pagination
+    const total = await User.countDocuments(query);
+    
+    // Format avatar URLs
+    users.forEach(user => {
+      user.avatar = user.avatar
+        ? `${process.env.BASE_URL}/profile/${user.avatar}`
+        : `${process.env.DEFAULT_PROFILE_PIC}`;
+    });
+    
+    return res.status(200).json(new ApiResponse(200, {
+      users,
+      pagination: {
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / limit),
+        limit: parseInt(limit)
+      }
+    }, Msg.DATA_FETCHED));
+    
+  } catch (error) {
+    console.log(`error while searching user`, error);
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+}
