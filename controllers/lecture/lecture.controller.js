@@ -338,6 +338,7 @@ export const generateTranscriptMcqHandle = async (req, res) => {
       "https://python.aitechnotech.in/mcq/convert-to-mcqs",
       {
         transcription: transcription.text,
+        num_questions: 10
       }
     );
 

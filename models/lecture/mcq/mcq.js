@@ -20,6 +20,7 @@ const McqAttemptSchema = new mongoose.Schema(
         options: [String],
 
         correctAnswer: String,
+        explanation: String,
         userAnswer: String,
         isCorrect: {
           type: Boolean,
