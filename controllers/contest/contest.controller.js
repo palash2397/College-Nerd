@@ -243,3 +243,86 @@ export const getContestListHandle = async (req, res) => {
       .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
+
+
+export const startContestHandle = async (req, res) => {
+  try {
+    const { contestId } = req.params;
+    const userId = req.user.id;
+
+    // 1. Validate contest
+    const contest = await Contest.findOne({
+      _id: contestId,
+      status: "published",
+    });
+
+    if (!contest) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+    }
+
+    const now = new Date();
+
+    // 2. Time validation
+    if (now < contest.startAt) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, "Contest has not started yet"));
+    }
+
+    if (now > contest.endAt) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, "Contest has already ended"));
+    }
+
+    // 3. Prevent multiple attempts
+    const existingAttempt = await ContestAttempt.findOne({
+      contestId,
+      userId,
+    });
+
+    if (existingAttempt) {
+      return res.status(400).json(
+        new ApiResponse(
+          400,
+          { attemptId: existingAttempt._id },
+          "Contest already attempted"
+        )
+      );
+    }
+
+    // 4. Create attempt
+    const attempt = await ContestAttempt.create({
+      contestId,
+      userId,
+      totalQuestions: contest.totalQuestions,
+      startedAt: now,
+      status: "started",
+    });
+
+    // 5. Response
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          attemptId: attempt._id,
+          contestId,
+          startedAt: attempt.startedAt,
+          durationMinutes: contest.durationMinutes,
+          endsAt: new Date(
+            attempt.startedAt.getTime() +
+              contest.durationMinutes * 60 * 1000
+          ),
+        },
+        "Contest started successfully"
+      )
+    );
+  } catch (error) {
+    console.error("Error starting contest:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
