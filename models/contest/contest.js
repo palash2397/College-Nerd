@@ -29,10 +29,10 @@ const ContestSchema = new mongoose.Schema(
     //   },
     // },
 
-    // source: {
-    //   type: String,
-    //   required: true,
-    // },
+    sourcePdf: {
+      type: String,
+      required: null,
+    },
 
     // sourcePdf: {
     //   key: {

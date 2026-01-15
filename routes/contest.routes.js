@@ -1,0 +1,28 @@
+import { Router } from "express";
+import { createContestHandle, generateContestQuestionsHandle } from "../controllers/contest/contest.controller.js";
+import { auth } from "../middlewares/auth.js";
+import { setUploadPath } from "../utils/helpers.js";
+import { upload } from "../middlewares/multer.js";
+import { isAdmin } from "../middlewares/auth.js";
+
+const contestRouter = Router();
+
+contestRouter.post(
+  "/create",
+  auth,
+  isAdmin,
+  setUploadPath("contest/thumbnail"),
+  upload.single("thumbnail"),
+  createContestHandle
+);
+
+contestRouter.post(
+  "/:contestId/generate-questions",
+  auth,
+  isAdmin,
+  setUploadPath("contest/pdf"),
+  upload.single("pdf"),
+  generateContestQuestionsHandle
+);
+
+export default contestRouter;

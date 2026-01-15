@@ -11,7 +11,8 @@ const ContestAnswerSchema = new mongoose.Schema(
 
     questionId: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true, // from ContestQuestion (later)
+      ref: "ContestQuestion",
+      required: true, 
     },
 
     answer: {
