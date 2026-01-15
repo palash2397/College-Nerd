@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { createContestHandle, generateContestQuestionsHandle } from "../controllers/contest/contest.controller.js";
+import {
+  createContestHandle,
+  generateContestQuestionsHandle,
+  publishContestHandle,
+  getContestListHandle,
+} from "../controllers/contest/contest.controller.js";
 import { auth } from "../middlewares/auth.js";
 import { setUploadPath } from "../utils/helpers.js";
 import { upload } from "../middlewares/multer.js";
@@ -24,5 +29,8 @@ contestRouter.post(
   upload.single("pdf"),
   generateContestQuestionsHandle
 );
+
+contestRouter.post("/:contestId/publish", auth, isAdmin, publishContestHandle);
+contestRouter.get("/list", auth, getContestListHandle);
 
 export default contestRouter;

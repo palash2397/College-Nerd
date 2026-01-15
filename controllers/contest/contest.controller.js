@@ -205,3 +205,41 @@ export const publishContestHandle = async (req, res) => {
       .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
+
+export const getContestListHandle = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const contests = await Contest.find({ status: "published" })
+      .select(
+        "title thumbnail entryCoins durationMinutes startAt endAt createdAt"
+      )
+      .sort({ startAt: 1 });
+
+    const data = {
+      upcoming: [],
+      ongoing: [],
+      finished: [],
+    };
+
+    contests.forEach((contest) => {
+        contest.thumbnail = `${process.env.BASE_URL}/contest/thumbnail/${contest.thumbnail}`
+      if (contest.startAt > now) {
+        data.upcoming.push(contest);
+      } else if (contest.endAt < now) {
+        data.finished.push(contest);
+      } else {
+        data.ongoing.push(contest);
+      }
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, data, Msg.DATA_FETCHED));
+  } catch (error) {
+    console.error("Error fetching contest list:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
