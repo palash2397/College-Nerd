@@ -24,7 +24,8 @@ import {
   submitFeedbackHandle,
   userFeedbackHandle,
   saveMedicalScribetHandle,
-  allUsersFeedbackHandle
+  allUsersFeedbackHandle,
+  allFlashCards
 } from "../controllers/user/user.controller.js";
 import { auth } from "../middlewares/auth.js";
 import { setUploadPath } from "../utils/helpers.js";
@@ -71,5 +72,7 @@ userRouter.get("/feedback/all", auth, allUsersFeedbackHandle);
 
 userRouter.post("/generate/ai-notes/:id", auth, generateAiNotesHandle);
 userRouter.post("/generate/ai-summary/:id", auth, generateNotesSummaryHandle);
+
+userRouter.get("/flashcard", auth, allFlashCards);
 
 export default userRouter;
