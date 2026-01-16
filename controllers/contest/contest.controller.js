@@ -244,7 +244,6 @@ export const getContestListHandle = async (req, res) => {
   }
 };
 
-
 export const startContestHandle = async (req, res) => {
   try {
     const { contestId } = req.params;
@@ -321,6 +320,183 @@ export const startContestHandle = async (req, res) => {
     );
   } catch (error) {
     console.error("Error starting contest:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+
+export const contestQuestionsHandle = async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+    const userId = req.user.id;
+
+    // 1. Validate attempt
+    const attempt = await ContestAttempt.findById(attemptId);
+    if (!attempt || attempt.userId.toString() !== userId) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+    }
+
+    // 2. Validate contest timing
+    const contest = await Contest.findById(attempt.contestId);
+    if (!contest) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+    }
+
+    const now = new Date();
+    if (now > contest.endAt) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, "Contest has ended"));
+    }
+
+    // 3. Fetch questions (hide answers)
+    const questions = await ContestQuestion.find({
+      contestId: contest._id,
+    })
+      .sort({ order: 1 })
+      .select("_id question options order");
+
+    if (!questions.length) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, {}, "No questions found"));
+    }
+
+    // 4. Optional shuffle
+    const shuffled = questions.sort(() => Math.random() - 0.5);
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          attemptId,
+          contestId: contest._id,
+          totalQuestions: shuffled.length,
+          questions: shuffled,
+        },
+        Msg.DATA_FETCHED
+      )
+    );
+  } catch (error) {
+    console.error("Error fetching contest questions:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+
+export const submitContestHandle = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { attemptId, answers } = req.body;
+
+
+
+    if (!Array.isArray(answers) || answers.length === 0) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, "Answers are required"));
+    }
+
+    const attempt = await ContestAttempt.findById(attemptId);
+    if (!attempt || attempt.userId.toString() !== userId) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+    }
+
+    if (attempt.status !== "started") {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, "Contest already submitted"));
+    }
+
+
+
+    const questionIds = answers.map(a => a.questionId);
+
+    const questions = await ContestQuestion.find({
+      _id: { $in: questionIds },
+      contestId: attempt.contestId,
+    });
+
+
+
+    let correctCount = 0;
+
+    const resultDetails = questions.map(question => {
+      const userAnswer = answers.find(
+        a => a.questionId.toString() === question._id.toString()
+      );
+
+      const isCorrect =
+        userAnswer?.answerIndex === question.correctIndex;
+
+      if (isCorrect) correctCount++;
+
+      return {
+        questionId: question._id,
+        question: question.question,
+        options: question.options,
+        correctIndex: question.correctIndex,
+        userAnswerIndex: userAnswer?.answerIndex ?? null,
+        isCorrect,
+        explanation: question.explanation,
+      };
+    });
+
+    const totalQuestions = questions.length;
+    const wrongCount = totalQuestions - correctCount;
+    const scorePercent = Math.round(
+      (correctCount / totalQuestions) * 100
+    );
+
+
+
+    const finishedAt = new Date();
+    const timeTaken = Math.floor(
+      (finishedAt - attempt.startedAt) / 1000
+    ); // seconds
+
+    
+
+    attempt.totalQuestions = totalQuestions;
+    attempt.correctCount = correctCount;
+    attempt.wrongCount = wrongCount;
+    attempt.scorePercent = scorePercent;
+    attempt.finishedAt = finishedAt;
+    attempt.timeTaken = timeTaken; 
+    attempt.status = "submitted";
+
+    await attempt.save();
+
+    /* ---------------- RESPONSE ---------------- */
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          summary: {
+            totalQuestions,
+            correct: correctCount,
+            wrong: wrongCount,
+            scorePercent,
+            timeTaken, 
+          },
+          details: resultDetails,
+        },
+        "Contest submitted successfully"
+      )
+    );
+  } catch (error) {
+    console.error("Error submitting contest:", error);
     return res
       .status(500)
       .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));

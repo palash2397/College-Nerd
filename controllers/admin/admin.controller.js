@@ -159,7 +159,7 @@ export const allUserHandle = async (req, res) => {
     const users = await User.find({
       role: { $ne: "admin" },
     }).select(
-      "-otp -otpExpireAt -otpVerifiedForResetPassword -createdAt -updatedAt -__v -googleId"
+      "-otp -otpExpireAt -otpVerifiedForResetPassword  -updatedAt -__v -googleId"
     );
 
     users.map((item) => {

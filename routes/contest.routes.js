@@ -4,7 +4,9 @@ import {
   generateContestQuestionsHandle,
   publishContestHandle,
   getContestListHandle,
-  startContestHandle
+  startContestHandle,
+  contestQuestionsHandle,
+  submitContestHandle
 } from "../controllers/contest/contest.controller.js";
 import { auth } from "../middlewares/auth.js";
 import { setUploadPath } from "../utils/helpers.js";
@@ -34,5 +36,7 @@ contestRouter.post(
 contestRouter.post("/:contestId/publish", auth, isAdmin, publishContestHandle);
 contestRouter.get("/list", auth, getContestListHandle);
 contestRouter.post("/:contestId/start", auth, startContestHandle);
+contestRouter.get("/:attemptId/questions", auth, contestQuestionsHandle);
+contestRouter.post("/submit", auth, submitContestHandle);
 
 export default contestRouter;
