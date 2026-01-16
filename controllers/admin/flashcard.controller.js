@@ -3,7 +3,7 @@ import Joi from "joi";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { Msg } from "../../utils/responseMsg.js";
 import Flashcard from "../../models/flashcard/flashcard.js";
-import User from "../../models/user/user.js";
+
 
 export const createFlashCardHandle = async (req, res) => {
   try {
@@ -36,4 +36,26 @@ export const createFlashCardHandle = async (req, res) => {
   }
 };
 
-// export const deleteFlashCardHandle = async(req,)
+ export const deleteFlashCardHandle = async(req,res)=>{
+    try {
+        const {id} = req.params;
+        const schema = Joi.object({
+            id: Joi.string().required(),
+        });
+        
+        const {error} = schema.validate(req.params);
+        if(error){
+            return res.status(400).json(new ApiResponse(400, {}, error.details[0].message));
+        }
+
+        const flashcard = await Flashcard.findByIdAndDelete(id);
+        if(!flashcard){
+            return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+        }
+        return res.status(200).json(new ApiResponse(200, {}, Msg.DATA_DELETED));
+        
+    } catch (error) {
+        console.log(`Error while deleting flashcard :`, error);
+        return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    }
+ }

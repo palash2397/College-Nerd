@@ -26,7 +26,7 @@ import {
   searchUserHandle,
 } from "../controllers/admin/dashborad.controller.js";
 
-import { createFlashCardHandle } from "../controllers/admin/flashcard.controller.js";
+import { createFlashCardHandle, deleteFlashCardHandle } from "../controllers/admin/flashcard.controller.js";
 
 import { auth, isAdmin } from "../middlewares/auth.js";
 
@@ -67,5 +67,6 @@ adminRouter.get("/search-user", auth, isAdmin, searchUserHandle);
 
 // Flashcard
 adminRouter.post("/flashcard", auth, isAdmin, createFlashCardHandle);
+adminRouter.delete("/flashcard/:id", auth, isAdmin, deleteFlashCardHandle);
 
 export default adminRouter;
