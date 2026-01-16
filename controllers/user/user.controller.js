@@ -1128,22 +1128,18 @@ export const allUsersFeedbackHandle = async (req, res) => {
 
       Feedback.countDocuments({ review: { $ne: null } }),
 
-      Feedback.aggregate([
-        { $group: { _id: "$rating", count: { $sum: 1 } } },
-      ]),
+      Feedback.aggregate([{ $group: { _id: "$rating", count: { $sum: 1 } } }]),
     ]);
 
-    const ratings = { 1:0, 2:0, 3:0, 4:0, 5:0 };
+    const ratings = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     let ratingSum = 0;
 
-    stats.forEach(s => {
+    stats.forEach((s) => {
       ratings[s._id] = s.count;
       ratingSum += s._id * s.count;
     });
 
-    const averageRating = total
-      ? +(ratingSum / total).toFixed(1)
-      : 0;
+    const averageRating = total ? +(ratingSum / total).toFixed(1) : 0;
 
     const ratingBars = Object.fromEntries(
       Object.entries(ratings).map(([k, v]) => [
@@ -1160,7 +1156,7 @@ export const allUsersFeedbackHandle = async (req, res) => {
           totalReviews: total,
           ratings: ratingBars,
         },
-        reviews: reviews.map(r => ({
+        reviews: reviews.map((r) => ({
           rating: r.rating,
           review: r.review,
           user: r.user?.name || "Anonymous Review",
@@ -1173,26 +1169,23 @@ export const allUsersFeedbackHandle = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching feedbacks:", error);
-    return res
-      .status(500)
-      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
 
-
-export const allFlashCards = async(req, res)=>{
+export const allFlashCards = async (req, res) => {
   try {
-    const flashcards = await Flashcard.find({ status: true}).sort({createdAt: -1});
+    const flashcards = await Flashcard.find({ status: true })
+      .sort({ createdAt: -1 })
+      .select("-__v -updatedAt -lectureId");
     if (!flashcards || flashcards.length === 0) {
       return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
     }
-    return res.status(200).json(new ApiResponse(200, flashcards, Msg.DATA_FETCHED));
+    return res
+      .status(200)
+      .json(new ApiResponse(200, flashcards, Msg.DATA_FETCHED));
   } catch (error) {
     console.log("Error fetching flashcards:", error);
     return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
-    
   }
-}
-
-
-
+};
