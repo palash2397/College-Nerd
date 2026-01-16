@@ -61,6 +61,11 @@ const ContestSchema = new mongoose.Schema(
       default: 0,
     },
 
+    rewardCoins: {
+  type: Number,
+  required: true,
+},
+
     startAt: {
       type: Date,
       required: true,

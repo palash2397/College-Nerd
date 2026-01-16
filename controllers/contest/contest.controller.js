@@ -23,6 +23,7 @@ export const createContestHandle = async (req, res) => {
       totalQuestions,
       durationMinutes,
       entryCoins,
+      rewardCoins,
       startAt,
       endAt,
       status,
@@ -34,6 +35,7 @@ export const createContestHandle = async (req, res) => {
       totalQuestions: Joi.number().min(1).required(),
       durationMinutes: Joi.number().min(1).required(),
       entryCoins: Joi.number().min(0).default(0),
+      rewardCoins: Joi.number().min(0).required(),
       startAt: Joi.date().required(),
       endAt: Joi.date().required(),
       status: Joi.string().valid("draft", "published").default("draft"),
@@ -56,6 +58,7 @@ export const createContestHandle = async (req, res) => {
       totalQuestions,
       durationMinutes,
       entryCoins,
+      rewardCoins,
       startAt,
       endAt,
       status,
@@ -80,9 +83,7 @@ export const generateContestQuestionsHandle = async (req, res) => {
 
     const contest = await Contest.findById(contestId);
     if (!contest) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
     }
 
     if (!req.file) {
@@ -143,17 +144,17 @@ export const generateContestQuestionsHandle = async (req, res) => {
     // 6. Delete local PDF after processing (recommended)
     deleteFile(req.file.path);
 
-    return res.status(200).json(
-      new ApiResponse(
-        200,
-        { totalQuestions: questions.length },
-        Msg.DATA_GENERATED
-      )
-    );
-
     return res
       .status(200)
-      .json(new ApiResponse(200, mcqs, Msg.DATA_GENERATED));
+      .json(
+        new ApiResponse(
+          200,
+          { totalQuestions: questions.length },
+          Msg.DATA_GENERATED
+        )
+      );
+
+    return res.status(200).json(new ApiResponse(200, mcqs, Msg.DATA_GENERATED));
   } catch (error) {
     console.error("Error generating contest questions:", error);
 
@@ -161,12 +162,9 @@ export const generateContestQuestionsHandle = async (req, res) => {
       deleteFile(req.file.path);
     }
 
-    return res
-      .status(500)
-      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
-
 
 export const publishContestHandle = async (req, res) => {
   try {
@@ -175,9 +173,7 @@ export const publishContestHandle = async (req, res) => {
     // 1. Validate contest
     const contest = await Contest.findById(contestId);
     if (!contest) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
     }
 
     // 2. Already published check
@@ -191,18 +187,18 @@ export const publishContestHandle = async (req, res) => {
     contest.status = "published";
     await contest.save();
 
-    return res.status(200).json(
-      new ApiResponse(
-        200,
-        { contestId: contest._id, status: contest.status },
-        "Contest published successfully"
-      )
-    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { contestId: contest._id, status: contest.status },
+          "Contest published successfully"
+        )
+      );
   } catch (error) {
     console.error("Error publishing contest:", error);
-    return res
-      .status(500)
-      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
 
@@ -223,7 +219,7 @@ export const getContestListHandle = async (req, res) => {
     };
 
     contests.forEach((contest) => {
-        contest.thumbnail = `${process.env.BASE_URL}/contest/thumbnail/${contest.thumbnail}`
+      contest.thumbnail = `${process.env.BASE_URL}/contest/thumbnail/${contest.thumbnail}`;
       if (contest.startAt > now) {
         data.upcoming.push(contest);
       } else if (contest.endAt < now) {
@@ -233,14 +229,10 @@ export const getContestListHandle = async (req, res) => {
       }
     });
 
-    return res
-      .status(200)
-      .json(new ApiResponse(200, data, Msg.DATA_FETCHED));
+    return res.status(200).json(new ApiResponse(200, data, Msg.DATA_FETCHED));
   } catch (error) {
     console.error("Error fetching contest list:", error);
-    return res
-      .status(500)
-      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
 
@@ -256,9 +248,7 @@ export const startContestHandle = async (req, res) => {
     });
 
     if (!contest) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
     }
 
     const now = new Date();
@@ -283,13 +273,20 @@ export const startContestHandle = async (req, res) => {
     });
 
     if (existingAttempt) {
-      return res.status(400).json(
-        new ApiResponse(
-          400,
-          { attemptId: existingAttempt._id },
-          "Contest already attempted"
-        )
-      );
+      return res
+        .status(400)
+        .json(
+          new ApiResponse(
+            400,
+            { attemptId: existingAttempt._id },
+            "Contest already attempted"
+          )
+        );
+    }
+
+    const user = await User.findById(userId);
+    if (user.coins < contest.entryCoins) {
+      return res.status(400).json(new ApiResponse(400, {}, "Not enough coins"));
     }
 
     // 4. Create attempt
@@ -301,6 +298,9 @@ export const startContestHandle = async (req, res) => {
       status: "started",
     });
 
+    user.coins -= contest.entryCoins;
+    await user.save();
+
     // 5. Response
     return res.status(200).json(
       new ApiResponse(
@@ -311,8 +311,7 @@ export const startContestHandle = async (req, res) => {
           startedAt: attempt.startedAt,
           durationMinutes: contest.durationMinutes,
           endsAt: new Date(
-            attempt.startedAt.getTime() +
-              contest.durationMinutes * 60 * 1000
+            attempt.startedAt.getTime() + contest.durationMinutes * 60 * 1000
           ),
         },
         "Contest started successfully"
@@ -320,12 +319,9 @@ export const startContestHandle = async (req, res) => {
     );
   } catch (error) {
     console.error("Error starting contest:", error);
-    return res
-      .status(500)
-      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
-
 
 export const contestQuestionsHandle = async (req, res) => {
   try {
@@ -335,17 +331,13 @@ export const contestQuestionsHandle = async (req, res) => {
     // 1. Validate attempt
     const attempt = await ContestAttempt.findById(attemptId);
     if (!attempt || attempt.userId.toString() !== userId) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
     }
 
     // 2. Validate contest timing
     const contest = await Contest.findById(attempt.contestId);
     if (!contest) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
     }
 
     const now = new Date();
@@ -385,19 +377,15 @@ export const contestQuestionsHandle = async (req, res) => {
     );
   } catch (error) {
     console.error("Error fetching contest questions:", error);
-    return res
-      .status(500)
-      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
 
-
 export const submitContestHandle = async (req, res) => {
   try {
+    let reward = 0;
     const userId = req.user.id;
     const { attemptId, answers } = req.body;
-
-
 
     if (!Array.isArray(answers) || answers.length === 0) {
       return res
@@ -407,9 +395,7 @@ export const submitContestHandle = async (req, res) => {
 
     const attempt = await ContestAttempt.findById(attemptId);
     if (!attempt || attempt.userId.toString() !== userId) {
-      return res
-        .status(404)
-        .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
     }
 
     if (attempt.status !== "started") {
@@ -418,26 +404,31 @@ export const submitContestHandle = async (req, res) => {
         .json(new ApiResponse(400, {}, "Contest already submitted"));
     }
 
-
-
-    const questionIds = answers.map(a => a.questionId);
+    const questionIds = answers.map((a) => a.questionId);
 
     const questions = await ContestQuestion.find({
       _id: { $in: questionIds },
       contestId: attempt.contestId,
     });
 
+    const contest = await Contest.findById(attempt.contestId);
+    if (!contest) {
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+    }
 
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json(new ApiResponse(404, {}, Msg.USER_NOT_FOUND));
+    }
 
     let correctCount = 0;
 
-    const resultDetails = questions.map(question => {
+    const resultDetails = questions.map((question) => {
       const userAnswer = answers.find(
-        a => a.questionId.toString() === question._id.toString()
+        (a) => a.questionId.toString() === question._id.toString()
       );
 
-      const isCorrect =
-        userAnswer?.answerIndex === question.correctIndex;
+      const isCorrect = userAnswer?.answerIndex === question.correctIndex;
 
       if (isCorrect) correctCount++;
 
@@ -454,26 +445,26 @@ export const submitContestHandle = async (req, res) => {
 
     const totalQuestions = questions.length;
     const wrongCount = totalQuestions - correctCount;
-    const scorePercent = Math.round(
-      (correctCount / totalQuestions) * 100
-    );
-
-
+    const scorePercent = Math.round((correctCount / totalQuestions) * 100);
 
     const finishedAt = new Date();
-    const timeTaken = Math.floor(
-      (finishedAt - attempt.startedAt) / 1000
-    ); // seconds
-
-    
+    const timeTaken = Math.floor((finishedAt - attempt.startedAt) / 1000); // seconds
 
     attempt.totalQuestions = totalQuestions;
     attempt.correctCount = correctCount;
     attempt.wrongCount = wrongCount;
     attempt.scorePercent = scorePercent;
     attempt.finishedAt = finishedAt;
-    attempt.timeTaken = timeTaken; 
+    attempt.timeTaken = timeTaken;
     attempt.status = "submitted";
+
+    console.log("contest.rewardCoins", contest.rewardCoins);
+
+    if (scorePercent >= 80) reward = contest.rewardCoins;
+    else if (scorePercent >= 50) reward = Math.floor(contest.rewardCoins / 2);
+
+    user.coins += reward;
+    await user.save();
 
     await attempt.save();
 
@@ -488,7 +479,7 @@ export const submitContestHandle = async (req, res) => {
             correct: correctCount,
             wrong: wrongCount,
             scorePercent,
-            timeTaken, 
+            timeTaken,
           },
           details: resultDetails,
         },
@@ -497,8 +488,6 @@ export const submitContestHandle = async (req, res) => {
     );
   } catch (error) {
     console.error("Error submitting contest:", error);
-    return res
-      .status(500)
-      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };

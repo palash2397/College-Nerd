@@ -268,6 +268,7 @@ export const loginHandle = async (req, res) => {
       role: user.role,
       isVerified: user.isVerified,
       isActive: user.isActive,
+      coins: user.coins,
       token: token,
     };
 
