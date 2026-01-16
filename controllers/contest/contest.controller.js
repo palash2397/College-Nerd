@@ -564,7 +564,6 @@ export const contestLeaderboardHandle = async (req, res) => {
 };
 
 
-
 export const globalLeaderboardHandle = async (req, res) => {
   try {
     const limit = Number(req.query.limit) || 50;
@@ -665,7 +664,7 @@ export const globalLeaderboardTodayHandle = async (req, res) => {
   }
 };
 
- export const globalLeaderboardMonthlyHandle = async (req, res) => {
+export const globalLeaderboardMonthlyHandle = async (req, res) => {
   try {
     const start = new Date();
     start.setDate(1);
