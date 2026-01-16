@@ -595,7 +595,7 @@ export const globalLeaderboardHandle = async (req, res) => {
   }
 };
 
- export const globalLeaderboardTodayHandle = async (req, res) => {
+export const globalLeaderboardTodayHandle = async (req, res) => {
   try {
     // ✅ Use UTC-safe day range
     const start = new Date();
@@ -663,7 +663,7 @@ export const globalLeaderboardHandle = async (req, res) => {
       .status(500)
       .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
- };
+};
 
  export const globalLeaderboardMonthlyHandle = async (req, res) => {
   try {
