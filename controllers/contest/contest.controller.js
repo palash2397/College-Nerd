@@ -1,4 +1,5 @@
 import Jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 import FormData from "form-data";
 import Joi from "joi";
 import fs from "fs";
@@ -13,7 +14,7 @@ import ContestQuestion from "../../models/contest/contestQuestion.js";
 
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { Msg } from "../../utils/responseMsg.js";
-import { deleteFile, generatePdf } from "../../utils/helpers.js";
+import { deleteFile } from "../../utils/helpers.js";
 
 export const createContestHandle = async (req, res) => {
   try {
@@ -491,3 +492,72 @@ export const submitContestHandle = async (req, res) => {
     return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
+
+
+export const contestLeaderboardHandle = async (req, res) => {
+  try {
+    const { contestId } = req.params;
+
+    const contest = await Contest.findById(contestId);
+    if (!contest) {
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+    }
+
+    const leaderboard = await ContestAttempt.aggregate([
+      {
+        $match: {
+          contestId: new mongoose.Types.ObjectId(contestId),
+          status: "submitted",
+        },
+      },
+      {
+        $sort: {
+          scorePercent: -1,
+          timeTaken: 1,
+          finishedAt: 1,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      { $unwind: "$user" },
+      {
+        $project: {
+          _id: 0,
+          userId: "$user._id",
+          name: "$user.name",
+          avatar: "$user.avatar",
+          scorePercent: 1,
+          correctCount: 1,
+          wrongCount: 1,
+          timeTaken: 1,
+        },
+      },
+    ]);
+
+    console.log("leaderboard", leaderboard);
+
+    if (!leaderboard || leaderboard.length === 0) {
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+    }
+
+    leaderboard.map((user) => {
+      user.avatar = user.avatar ? `${process.env.BASE_URL}/profile/${user.avatar}` : `${process.env.DEFAULT_PROFILE_PIC}`;
+    });
+
+    return res.status(200).json(
+      new ApiResponse(200, leaderboard, "Contest leaderboard fetched")
+    );
+  } catch (error) {
+    console.error("Contest leaderboard error:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
