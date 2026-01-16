@@ -9,7 +9,8 @@ import {
   submitContestHandle,
   contestLeaderboardHandle,
   globalLeaderboardHandle,
-  globalLeaderboardTodayHandle
+  globalLeaderboardTodayHandle,
+  globalLeaderboardMonthlyHandle
 } from "../controllers/contest/contest.controller.js";
 import { auth } from "../middlewares/auth.js";
 import { setUploadPath } from "../utils/helpers.js";
@@ -44,5 +45,6 @@ contestRouter.post("/submit", auth, submitContestHandle);
 contestRouter.get("/:contestId/leaderboard", auth, contestLeaderboardHandle);
 contestRouter.get("/leaderboard/global", auth, globalLeaderboardHandle);
 contestRouter.get("/leaderboard/global/today", auth, globalLeaderboardTodayHandle);
+contestRouter.get("/leaderboard/global/monthly", auth, globalLeaderboardMonthlyHandle);
 
 export default contestRouter;
