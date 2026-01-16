@@ -456,8 +456,9 @@ export const submitContestHandle = async (req, res) => {
     attempt.wrongCount = wrongCount;
     attempt.scorePercent = scorePercent;
     attempt.finishedAt = finishedAt;
-    attempt.timeTaken = timeTaken;
+    attempt.timeTakenSeconds = timeTaken;
     attempt.status = "submitted";
+    attempt.rewardCoins = reward;
 
     console.log("contest.rewardCoins", contest.rewardCoins);
 
@@ -466,7 +467,8 @@ export const submitContestHandle = async (req, res) => {
 
     user.coins += reward;
     await user.save();
-
+     
+    attempt.rewardCoins = reward || 0;
     await attempt.save();
 
     /* ---------------- RESPONSE ---------------- */
@@ -592,3 +594,146 @@ export const globalLeaderboardHandle = async (req, res) => {
       .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
+
+ export const globalLeaderboardTodayHandle = async (req, res) => {
+  try {
+    // ✅ Use UTC-safe day range
+    const start = new Date();
+    start.setUTCHours(0, 0, 0, 0);
+
+    const end = new Date();
+    end.setUTCHours(23, 59, 59, 999);
+
+    const leaderboard = await ContestAttempt.aggregate([
+      {
+        $match: {
+          finishedAt: { $gte: start, $lte: end },
+          status: "submitted", // ✅ include all participants
+        },
+      },
+      {
+        $group: {
+          _id: "$userId",
+          coins: { $sum: { $ifNull: ["$rewardCoins", 0] } },
+        },
+      },
+      { $sort: { coins: -1 } },
+      { $limit: 50 },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      { $unwind: "$user" },
+      {
+        $project: {
+          userId: "$user._id",
+          name: "$user.name",
+          avatar: "$user.avatar",
+          coins: 1,
+        },
+      },
+    ]);
+
+    if (!leaderboard.length) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+    }
+
+    const data = leaderboard.map((u, i) => ({
+      rank: i + 1,
+      userId: u.userId,
+      name: u.name,
+      avatar: u.avatar
+        ? `${process.env.BASE_URL}/profile/${u.avatar}`
+        : process.env.DEFAULT_PROFILE_PIC,
+      coins: u.coins,
+    }));
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, data, Msg.DATA_FETCHED));
+  } catch (error) {
+    console.error("Today leaderboard error:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+ };
+
+ export const globalLeaderboardMonthlyHandle = async (req, res) => {
+  try {
+    const start = new Date();
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + 1);
+    end.setMilliseconds(-1);
+
+    const leaderboard = await ContestAttempt.aggregate([
+      {
+        $match: {
+          finishedAt: { $gte: start, $lte: end },
+          rewardCoins: { $gt: 0 },
+          status: "submitted",
+        },
+      },
+      {
+        $group: {
+          _id: "$userId",
+          coins: { $sum: "$rewardCoins" },
+        },
+      },
+      { $sort: { coins: -1 } },
+      { $limit: 50 },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      { $unwind: "$user" },
+      {
+        $project: {
+          userId: "$user._id",
+          name: "$user.name",
+          avatar: "$user.avatar",
+          coins: 1,
+        },
+      },
+    ]);
+
+    if (!leaderboard.length) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+    }
+
+    const data = leaderboard.map((u, i) => ({
+      rank: i + 1,
+      userId: u.userId,
+      name: u.name,
+      avatar: u.avatar
+        ? `${process.env.BASE_URL}/profile/${u.avatar}`
+        : process.env.DEFAULT_PROFILE_PIC,
+      coins: u.coins,
+    }));
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, data, Msg.DATA_FETCHED));
+  } catch (error) {
+    console.error("Monthly leaderboard error:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+

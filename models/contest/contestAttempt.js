@@ -56,6 +56,11 @@ const ContestAttemptSchema = new mongoose.Schema(
       default: 0,
     },
 
+    rewardCoins: {
+      type: Number,
+      default: 0,
+    },
+
     status: {
       type: String,
       enum: ["started", "submitted", "evaluated"],
