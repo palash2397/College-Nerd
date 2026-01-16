@@ -561,3 +561,34 @@ export const contestLeaderboardHandle = async (req, res) => {
   }
 };
 
+
+
+export const globalLeaderboardHandle = async (req, res) => {
+  try {
+    const limit = Number(req.query.limit) || 50;
+
+    const users = await User.find({ coins: { $gt: 0 } })
+      .sort({ coins: -1 })
+      .limit(limit)
+      .select("name avatar coins");
+
+    const leaderboard = users.map((u, index) => ({
+      rank: index + 1,
+      userId: u._id,
+      name: u.name,
+      avatar: u.avatar
+        ? `${process.env.BASE_URL}/profile/${u.avatar}`
+        : process.env.DEFAULT_PROFILE_PIC,
+      coins: u.coins,
+    }));
+
+    return res.status(200).json(
+      new ApiResponse(200, leaderboard, "Global leaderboard fetched")
+    );
+  } catch (error) {
+    console.error("Global leaderboard error:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
