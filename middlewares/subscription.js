@@ -1,6 +1,6 @@
 import UserSubscription from "../models/subscription/userSubscriptionPlan.js";
-import ApiResponse from "../utils/ApiResponse.js";
-import Msg from "../utils/responseMsg.js";
+import {ApiResponse} from "../utils/ApiResponse.js";
+import {Msg} from "../utils/responseMsg.js";
 
 export const checkSubscription = async (req, res, next) => {
   try {

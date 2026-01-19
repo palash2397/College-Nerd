@@ -8,7 +8,12 @@ const SubscriptionPlanSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // purely for UI display (Monthly, Quarterly, Yearly)
+    description: {
+      type: String,
+      required: true,
+    },
+
+    
     intervalLabel: {
       type: String,
       required: true, // "Monthly", "3 Months", "Yearly"

@@ -68,4 +68,5 @@ export const Msg = {
   SUBSCRIPTION_PLAN_UPDATED: `Subscription plan updated successfully`,
   SUBSCRIPTION_PLAN_DELETED: `Subscription plan deleted successfully`,
   SUBSCRIPTION_PLAN_NOT_FOUND: `Subscription plan not found`,
+  SUBSCRIPTION_ACTIVATED: `Subscription activated successfully`,
 };

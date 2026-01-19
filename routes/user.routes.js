@@ -28,10 +28,12 @@ import {
   allFlashCards
 } from "../controllers/user/user.controller.js";
 
-import { getAllPlansHandle } from "../controllers/admin/subscription.controller.js";
+import { getAllPlansHandle, subscribeToPlanHandle, getMySubscriptionHandle } from "../controllers/admin/subscription.controller.js";
 import { auth } from "../middlewares/auth.js";
 import { setUploadPath } from "../utils/helpers.js";
 import { upload } from "../middlewares/multer.js";
+
+import { checkSubscription } from "../middlewares/subscription.js";
 
 const userRouter = Router();
 
@@ -85,5 +87,7 @@ userRouter.get("/flashcard", auth, allFlashCards);
 
 // subscription
 userRouter.get("/plans", auth, getAllPlansHandle);
+userRouter.post("/subscribe/:planId", auth, subscribeToPlanHandle);
+userRouter.get("/my-subscription", auth, getMySubscriptionHandle);
 
 export default userRouter;
