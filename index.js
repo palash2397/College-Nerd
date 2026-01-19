@@ -15,6 +15,14 @@ const app = express();
 const PORT = process.env.PORT || 4001;
 
 connectDB();
+
+import { stripeWebhookHandle } from "./controllers/payment/payment.controller.js";
+app.use(
+  "/api/v1/payment/webhook",
+  express.raw({ type: "application/json" }),
+  stripeWebhookHandle,
+);
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -24,7 +32,7 @@ app.use(
   cors({
     origin: "*",
     credentials: true,
-  })
+  }),
 );
 app.use("/api/v1", express.static("public"));
 

@@ -2,9 +2,11 @@ import Joi from "joi";
 
 import User from "../../models/user/user.js";
 import SubscriptionPlan from "../../models/subscription/subscriptionPlans.js";
+import Payment from "../../models/payment/payment.js";
 import UserSubscriptionPlan from "../../models/subscription/userSubscriptionPlan.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { Msg } from "../../utils/responseMsg.js";
+import stripe from "../../utils/stripe/stripe.js"
 
 export const createSubscriptionPlanHandle = async (req, res) => {
   try {
@@ -95,7 +97,6 @@ export const getAllPlansHandle = async (req, res) => {
   }
 };
 
-// export const updateSubscriptionPlanHandle
 
 export const subscribeToPlanHandle = async (req, res) => {
   try {
