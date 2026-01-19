@@ -39,6 +39,7 @@ import {
   createSubscriptionPaymentIntentHandle,
   stripeWebhookHandle,
   confirmPaymentIntentHandle,
+  paymentHistory
 } from "../controllers/payment/payment.controller.js";
 
 import { auth } from "../middlewares/auth.js";
@@ -115,5 +116,7 @@ userRouter.post(
   auth,
   confirmPaymentIntentHandle,
 );
+
+userRouter.get("/payment-history", auth, paymentHistory);
 
 export default userRouter;

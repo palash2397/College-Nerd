@@ -79,10 +79,15 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    hasActiveSubscription: {
+      type: Boolean,
+      default: false
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Hash password before saving

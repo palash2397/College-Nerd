@@ -270,6 +270,7 @@ export const loginHandle = async (req, res) => {
       isVerified: user.isVerified,
       isActive: user.isActive,
       coins: user.coins,
+      hasSubscribtion: user.hasActiveSubscription,
       token: token,
     };
 
