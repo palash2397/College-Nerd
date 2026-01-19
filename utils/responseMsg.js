@@ -58,4 +58,14 @@ export const Msg = {
   EMAIL_ALREADY_VERIFIED: `Email already verified`,
   PHONE_VERIFIED: `Phone number verified successfully`,
   PHONE_ALREADY_VERIFIED: `Phone number already verified`,
+
+
+  // Subscription
+  SUBSCRIPTION_REQUIRED: `You need an active subscription to use this feature`,
+  SUBSCRIPTION_EXPIRED: `Your subscription has expired. Please renew to continue.`,
+  SUBSCRIPTION_INACTIVE: `Your subscription is not active`,
+  SUBSCRIPTION_PLAN_ADDED: `Subscription plan added successfully`,
+  SUBSCRIPTION_PLAN_UPDATED: `Subscription plan updated successfully`,
+  SUBSCRIPTION_PLAN_DELETED: `Subscription plan deleted successfully`,
+  SUBSCRIPTION_PLAN_NOT_FOUND: `Subscription plan not found`,
 };

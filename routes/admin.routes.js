@@ -26,7 +26,16 @@ import {
   searchUserHandle,
 } from "../controllers/admin/dashborad.controller.js";
 
-import { createFlashCardHandle, deleteFlashCardHandle, changeStatusOfCardHandle } from "../controllers/admin/flashcard.controller.js";
+import {
+  createFlashCardHandle,
+  deleteFlashCardHandle,
+  changeStatusOfCardHandle,
+} from "../controllers/admin/flashcard.controller.js";
+
+import {
+  createSubscriptionPlanHandle,
+  deleteSubscriptionPlanHandle,
+} from "../controllers/admin/subscription.controller.js";
 
 import { auth, isAdmin } from "../middlewares/auth.js";
 
@@ -45,7 +54,7 @@ adminRouter.patch(
   "/user/deactivate/:id",
   auth,
   isAdmin,
-  deactivatAccountHandle
+  deactivatAccountHandle,
 );
 
 // Dashboard
@@ -58,16 +67,18 @@ adminRouter.post(
   isAdmin,
   setUploadPath("profile"),
   upload.single("avatar"),
-  addUserHandle
+  addUserHandle,
 );
 adminRouter.get("/lectures", auth, isAdmin, allLecturesHandle);
 adminRouter.get("/search-user", auth, isAdmin, searchUserHandle);
-
-
 
 // Flashcard
 adminRouter.post("/flashcard", auth, isAdmin, createFlashCardHandle);
 adminRouter.delete("/flashcard/:id", auth, isAdmin, deleteFlashCardHandle);
 adminRouter.patch("/flashcard/:id", auth, isAdmin, changeStatusOfCardHandle);
+
+// Subscription
+adminRouter.post("/subscription", auth, isAdmin, createSubscriptionPlanHandle);
+adminRouter.delete("/subscription/:id", auth, isAdmin, deleteSubscriptionPlanHandle);
 
 export default adminRouter;
