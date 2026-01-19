@@ -27,6 +27,8 @@ import {
   allUsersFeedbackHandle,
   allFlashCards
 } from "../controllers/user/user.controller.js";
+
+import { getAllPlansHandle } from "../controllers/admin/subscription.controller.js";
 import { auth } from "../middlewares/auth.js";
 import { setUploadPath } from "../utils/helpers.js";
 import { upload } from "../middlewares/multer.js";
@@ -66,13 +68,22 @@ userRouter.post(
   transcribeFileHandle
 );
 
+
+// feedback
 userRouter.post("/feedback", auth, submitFeedbackHandle);
 userRouter.get("/feedback", auth, userFeedbackHandle);
 userRouter.get("/feedback/all", auth, allUsersFeedbackHandle);
 
+// ai 
 userRouter.post("/generate/ai-notes/:id", auth, generateAiNotesHandle);
 userRouter.post("/generate/ai-summary/:id", auth, generateNotesSummaryHandle);
 
+
+// flashcard
 userRouter.get("/flashcard", auth, allFlashCards);
+
+
+// subscription
+userRouter.get("/plans", auth, getAllPlansHandle);
 
 export default userRouter;
