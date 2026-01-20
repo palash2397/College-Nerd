@@ -1,6 +1,7 @@
 import User from "../../models/user/user.js";
 import Lecture from "../../models/lecture/lecture.js";
 import Flashcard from "../../models/flashcard/flashcard.js";
+import Payment from "../../models/payment/payment.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { Msg } from "../../utils/responseMsg.js";
 
@@ -8,22 +9,48 @@ import Joi from "joi";
 
 export const dashboardHandle = async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments();
-    const totalCards = await Flashcard.countDocuments();
-    // const totalFaqs = await Faq.countDocuments();
-    // const totalLegalMessages = await LegalMessage.countDocuments();
-    const totalLectures = await Lecture.countDocuments();
+    const [
+      totalUsers,
+      totalCards,
+      totalLectures,
+      revenueResult,
+    ] = await Promise.all([
+      User.countDocuments(),
+      Flashcard.countDocuments(),
+      Lecture.countDocuments(),
+      Payment.aggregate([
+        { $match: { status: "success" } },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: "$amount" },
+          },
+        },
+      ]),
+    ]);
 
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(200, { totalUsers, totalLectures, totalCards }, Msg.DATA_FETCHED)
-      );
+    const totalRevenue = revenueResult[0]?.totalRevenue || 0;
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          totalUsers,
+          totalLectures,
+          totalCards,
+          totalRevenue,
+        },
+        Msg.DATA_FETCHED
+      )
+    );
   } catch (error) {
     console.log(`error while getting dashboard data`, error);
-    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    return res
+      .status(500)
+      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
+
 
 export const userStatsHandle = async (req, res) => {
   try {
