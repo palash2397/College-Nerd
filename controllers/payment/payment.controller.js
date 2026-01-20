@@ -241,14 +241,17 @@ export const adminRevenueSummaryHandle = async (req, res) => {
   try {
     const now = new Date();
 
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    const startOfTodayUTC = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate()
+    ));
 
-    const startOfMonth = new Date(
-      now.getFullYear(),
-      now.getMonth(),
+    const startOfMonthUTC = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
       1
-    );
+    ));
 
     const [total, today, month] = await Promise.all([
       Payment.aggregate([
@@ -259,7 +262,7 @@ export const adminRevenueSummaryHandle = async (req, res) => {
         {
           $match: {
             status: "success",
-            createdAt: { $gte: startOfDay },
+            createdAt: { $gte: startOfTodayUTC },
           },
         },
         { $group: { _id: null, amount: { $sum: "$amount" } } },
@@ -268,7 +271,7 @@ export const adminRevenueSummaryHandle = async (req, res) => {
         {
           $match: {
             status: "success",
-            createdAt: { $gte: startOfMonth },
+            createdAt: { $gte: startOfMonthUTC },
           },
         },
         { $group: { _id: null, amount: { $sum: "$amount" } } },
@@ -293,3 +296,4 @@ export const adminRevenueSummaryHandle = async (req, res) => {
       .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
+
