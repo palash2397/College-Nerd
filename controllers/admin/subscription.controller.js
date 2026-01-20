@@ -6,7 +6,7 @@ import Payment from "../../models/payment/payment.js";
 import UserSubscriptionPlan from "../../models/subscription/userSubscriptionPlan.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { Msg } from "../../utils/responseMsg.js";
-import stripe from "../../utils/stripe/stripe.js"
+import stripe from "../../utils/stripe/stripe.js";
 
 export const createSubscriptionPlanHandle = async (req, res) => {
   try {
@@ -97,7 +97,6 @@ export const getAllPlansHandle = async (req, res) => {
   }
 };
 
-
 export const subscribeToPlanHandle = async (req, res) => {
   try {
     const { planId } = req.params;
@@ -173,20 +172,22 @@ export const subscribeToPlanHandle = async (req, res) => {
 
 export const getMySubscriptionHandle = async (req, res) => {
   try {
-    
     const now = new Date();
 
-    const subscription = await UserSubscriptionPlan.findOne({ user: req.user.id  })
-      .populate("plan", "name intervalLabel price durationDays");
+    const subscription = await UserSubscriptionPlan.findOne({
+      user: req.user.id,
+    }).populate("plan", "name intervalLabel price durationDays");
 
     if (!subscription) {
-      return res.status(200).json(
-        new ApiResponse(
-          200,
-          { hasSubscription: false },
-          Msg.SUBSCRIPTION_INACTIVE
-        )
-      );
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            { hasSubscription: false },
+            Msg.SUBSCRIPTION_INACTIVE,
+          ),
+        );
     }
 
     // Auto-expire
@@ -197,9 +198,7 @@ export const getMySubscriptionHandle = async (req, res) => {
 
     const remainingDays =
       subscription.status === "active"
-        ? Math.ceil(
-            (subscription.endDate - now) / (1000 * 60 * 60 * 24)
-          )
+        ? Math.ceil((subscription.endDate - now) / (1000 * 60 * 60 * 24))
         : 0;
 
     return res.status(200).json(
@@ -213,11 +212,101 @@ export const getMySubscriptionHandle = async (req, res) => {
           endDate: subscription.endDate,
           remainingDays,
         },
-        Msg.DATA_FETCHED
-      )
+        Msg.DATA_FETCHED,
+      ),
     );
   } catch (error) {
     console.error("Get subscription error:", error);
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+export const updateSubscriptionHandle = async (req, res) => {
+  try {
+    const { planId, name, interval, price, durationDays, isActive, currency } =
+      req.body;
+    const schema = Joi.object({
+      planId: Joi.string().required(),
+      name: Joi.string().optional(),
+      interval: Joi.string().optional(),
+      price: Joi.number().optional(),
+      durationDays: Joi.number().optional(),
+      isActive: Joi.boolean().optional(),
+      currency: Joi.string().optional(),
+    });
+    const { error } = schema.validate(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, error.details[0].message));
+    }
+    const plan = await SubscriptionPlan.findById(planId);
+
+    if (!plan) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, {}, Msg.SUBSCRIPTION_PLAN_NOT_FOUND));
+    }
+
+
+    plan.name = name || plan.name;
+    plan.intervalLabel = interval || plan.intervalLabel;
+    plan.price = price || plan.price;
+    plan.durationDays = durationDays || plan.durationDays;
+    plan.isActive = isActive == undefined ? plan.isActive : isActive;
+    plan.currency = currency || plan.currency;
+    await plan.save();
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, plan, Msg.SUBSCRIPTION_PLAN_UPDATED));
+  } catch (error) {
+    console.error("Update plan error:", error);
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+
+export const adminSubscriptionsHandle = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const subscriptions = await UserSubscriptionPlan.find()
+      .populate("user", "name email")
+      .populate("plan", "name price durationDays")
+      .sort({ createdAt: -1 });
+
+    const data = subscriptions.map(sub => ({
+      user: {
+        id: sub.user._id,
+        name: sub.user.name,
+        email: sub.user.email,
+      },
+      plan: sub.plan
+        ? {
+            id: sub.plan._id,
+            name: sub.plan.name,
+            price: sub.plan.price,
+            durationDays: sub.plan.durationDays,
+          }
+        : null,
+      status: sub.status,
+      startDate: sub.startDate,
+      endDate: sub.endDate,
+      remainingDays:
+        sub.status === "active"
+          ? Math.max(
+              0,
+              Math.ceil((sub.endDate - now) / (1000 * 60 * 60 * 24))
+            )
+          : 0,
+    }));
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, data, Msg.DATA_FETCHED));
+  } catch (error) {
+    console.error("Admin subscriptions error:", error);
     return res
       .status(500)
       .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));

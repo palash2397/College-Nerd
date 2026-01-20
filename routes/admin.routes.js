@@ -35,6 +35,8 @@ import {
 import {
   createSubscriptionPlanHandle,
   deleteSubscriptionPlanHandle,
+  updateSubscriptionHandle,
+  adminSubscriptionsHandle,
 } from "../controllers/admin/subscription.controller.js";
 
 import { auth, isAdmin } from "../middlewares/auth.js";
@@ -80,5 +82,7 @@ adminRouter.patch("/flashcard/:id", auth, isAdmin, changeStatusOfCardHandle);
 // Subscription
 adminRouter.post("/subscription", auth, isAdmin, createSubscriptionPlanHandle);
 adminRouter.delete("/subscription/:id", auth, isAdmin, deleteSubscriptionPlanHandle);
+adminRouter.patch("/subscription", auth, isAdmin, updateSubscriptionHandle);
+adminRouter.get("/subscriptions", auth, isAdmin, adminSubscriptionsHandle);
 
 export default adminRouter;
