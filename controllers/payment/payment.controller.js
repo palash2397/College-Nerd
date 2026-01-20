@@ -197,3 +197,99 @@ export const paymentHistory = async (req, res) => {
     return res.status(500).json(new ApiResponse(500, {}, error.message));
   }
 };
+
+
+export const adminPaymentsHandle = async (req, res) => {
+  try {
+    const payments = await Payment.find()
+      .populate("user", "name email")
+      .populate("plan", "name price")
+      .sort({ createdAt: -1 });
+
+    const data = payments.map(p => ({
+      user: {
+        id: p.user?._id,
+        name: p.user?.name,
+        email: p.user?.email,
+      },
+      plan: p.plan
+        ? {
+            name: p.plan.name,
+            price: p.plan.price,
+          }
+        : null,
+      amount: p.amount,
+      currency: p.currency,
+      status: p.status,
+      paymentIntentId: p.stripePaymentIntentId,
+      createdAt: p.createdAt,
+    }));
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, data, Msg.DATA_FETCHED));
+  } catch (error) {
+    console.error("Admin payments error:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+
+export const adminRevenueSummaryHandle = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const startOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1
+    );
+
+    const [total, today, month] = await Promise.all([
+      Payment.aggregate([
+        { $match: { status: "success" } },
+        { $group: { _id: null, amount: { $sum: "$amount" } } },
+      ]),
+      Payment.aggregate([
+        {
+          $match: {
+            status: "success",
+            createdAt: { $gte: startOfDay },
+          },
+        },
+        { $group: { _id: null, amount: { $sum: "$amount" } } },
+      ]),
+      Payment.aggregate([
+        {
+          $match: {
+            status: "success",
+            createdAt: { $gte: startOfMonth },
+          },
+        },
+        { $group: { _id: null, amount: { $sum: "$amount" } } },
+      ]),
+    ]);
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          totalRevenue: total[0]?.amount || 0,
+          today: today[0]?.amount || 0,
+          thisMonth: month[0]?.amount || 0,
+        },
+        Msg.DATA_FETCHED
+      )
+    );
+  } catch (error) {
+    console.error("Admin revenue error:", error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};

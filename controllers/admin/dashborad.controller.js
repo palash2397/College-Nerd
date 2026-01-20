@@ -1,5 +1,6 @@
 import User from "../../models/user/user.js";
 import Lecture from "../../models/lecture/lecture.js";
+import Flashcard from "../../models/flashcard/flashcard.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { Msg } from "../../utils/responseMsg.js";
 
@@ -8,6 +9,7 @@ import Joi from "joi";
 export const dashboardHandle = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
+    const totalCards = await Flashcard.countDocuments();
     // const totalFaqs = await Faq.countDocuments();
     // const totalLegalMessages = await LegalMessage.countDocuments();
     const totalLectures = await Lecture.countDocuments();
@@ -15,7 +17,7 @@ export const dashboardHandle = async (req, res) => {
     return res
       .status(200)
       .json(
-        new ApiResponse(200, { totalUsers, totalLectures }, Msg.DATA_FETCHED)
+        new ApiResponse(200, { totalUsers, totalLectures, totalCards }, Msg.DATA_FETCHED)
       );
   } catch (error) {
     console.log(`error while getting dashboard data`, error);
