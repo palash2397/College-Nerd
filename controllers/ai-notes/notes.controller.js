@@ -8,6 +8,7 @@ import Joi from "joi";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { Msg } from "../../utils/responseMsg.js";
 import { deleteFile, generatePdf } from "../../utils/helpers.js";
+import { generatePdfFromHtml } from "../../utils/pdf/pdfGenerator.js";
 import AiNotes from "../../models/ai-notes/aiNotes.js";
 
 const md = new MarkdownIt();
@@ -163,11 +164,11 @@ export const notesToPdfHandle = async (req, res) => {
 
     console.log(note);
 
-    return generatePdf(
+    return generatePdfFromHtml(
       {
         title: note.title || "Notes",
         subtitle: `Type: ${note.noteType}`,
-        content: note.markdown, 
+        html: note.html, 
       },
       res,
     );
