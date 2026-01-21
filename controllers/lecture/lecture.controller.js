@@ -654,7 +654,7 @@ export const lecturePdfHandle = async (req, res) => {
           .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
       }
 
-      return generatePdf(
+      return generatePdfFromHtml(
         {
           title: "Lecture Transcript",
           subtitle: "Transcription Output",
@@ -676,7 +676,7 @@ export const lecturePdfHandle = async (req, res) => {
           .json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
       }
 
-      return generatePdf(
+      return generatePdfFromHtml(
         {
           title: "Lecture Summary",
           subtitle: "Summary Output",
@@ -715,7 +715,7 @@ Limitations:
 ${n.limitations.map((l) => `- ${l}`).join("\n")}
       `;
 
-      return generatePdf(
+      return generatePdfFromHtml(
         {
           title: "Lecture Notes",
           subtitle: "Notes Output",
