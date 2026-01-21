@@ -3,10 +3,11 @@ import path from "path";
 import axios from "axios";
 import FormData from "form-data";
 import MarkdownIt from "markdown-it";
+import Joi from "joi";
 
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { Msg } from "../../utils/responseMsg.js";
-import { deleteFile } from "../../utils/helpers.js";
+import { deleteFile, generatePdf } from "../../utils/helpers.js";
 import AiNotes from "../../models/ai-notes/aiNotes.js";
 
 const md = new MarkdownIt();
@@ -133,6 +134,45 @@ export const myNoteHandle = async (req, res) => {
     return res.status(200).json(new ApiResponse(200, note, Msg.DATA_FETCHED));
   } catch (error) {
     console.error("Get note error:", error);
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+};
+
+export const notesToPdfHandle = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const schema = Joi.object({
+      id: Joi.string().required(),
+    });
+
+    const { error } = schema.validate({ id });
+    if (error) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, error.details[0].message));
+    }
+
+    const note = await AiNotes.findOne({
+      userId: req.user.id,
+      _id: id,
+    });
+    if (!note) {
+      return res.status(404).json(new ApiResponse(404, {}, Msg.NOT_FOUND));
+    }
+
+    console.log(note);
+
+    return generatePdf(
+      {
+        title: note.title || "Notes",
+        subtitle: `Type: ${note.noteType}`,
+        content: note.markdown, 
+      },
+      res,
+    );
+  } catch (error) {
+    console.error("error while generating PDF:", error);
     return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };

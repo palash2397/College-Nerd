@@ -27,7 +27,7 @@ import {
   saveMedicalScribetHandle,
   allUsersFeedbackHandle,
   allFlashCards,
-  flashCardByIdHandle
+  flashCardByIdHandle,
 } from "../controllers/user/user.controller.js";
 
 import {
@@ -43,7 +43,12 @@ import {
   paymentHistory,
 } from "../controllers/payment/payment.controller.js";
 
-import { generateNotesFromFileHandle, myNotesHandle } from "../controllers/ai-notes/notes.controller.js";
+import {
+  generateNotesFromFileHandle,
+  myNotesHandle,
+  myNoteHandle,
+  notesToPdfHandle,
+} from "../controllers/ai-notes/notes.controller.js";
 import { auth } from "../middlewares/auth.js";
 import { setUploadPath } from "../utils/helpers.js";
 import { upload } from "../middlewares/multer.js";
@@ -133,5 +138,7 @@ userRouter.post(
 );
 
 userRouter.get("/ai/my-notes", auth, myNotesHandle);
+userRouter.get("/ai/my-note/:id", auth, myNoteHandle);
+userRouter.get("/ai/my-note/:id/pdf", auth, notesToPdfHandle);
 
 export default userRouter;
