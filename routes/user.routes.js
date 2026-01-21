@@ -43,7 +43,7 @@ import {
   paymentHistory,
 } from "../controllers/payment/payment.controller.js";
 
-// import { generateNotesHandle } from "../controllers/ai-notes/notes.controller.js";
+import { generateNotesFromFileHandle } from "../controllers/ai-notes/notes.controller.js";
 import { auth } from "../middlewares/auth.js";
 import { setUploadPath } from "../utils/helpers.js";
 import { upload } from "../middlewares/multer.js";
@@ -124,12 +124,12 @@ userRouter.post(
 userRouter.get("/payment-history", auth, paymentHistory);
 
 // ai
-// userRouter.post(
-//   "/generate/ai/notes",
-//   auth,
-//   setUploadPath("notes"),
-//   upload.single("file"),
-//   generateNotesHandle,
-// );
+userRouter.post(
+  "/generate/ai/notes",
+  auth,
+  setUploadPath("notes"),
+  upload.single("file"),
+  generateNotesFromFileHandle,
+);
 
 export default userRouter;

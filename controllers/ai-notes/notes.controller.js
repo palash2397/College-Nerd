@@ -1,87 +1,69 @@
-// import fs from "fs";
-// import {openai} from "../../utils/openAi/index.js";
-// import { ApiResponse } from "../../utils/ApiResponse.js";
-// import { Msg } from "../../utils/responseMsg.js";
-// import { extractTextFromFile, deleteFile, chunkText } from "../../utils/helpers.js";
+import fs from "fs";
 
-// export const generateNotesHandle = async (req, res) => {
-//   let filePath;
+import { ApiResponse } from "../../utils/ApiResponse.js";
+import { Msg } from "../../utils/responseMsg.js";
+import { deleteFile} from "../../utils/helpers.js";
 
-//   try {
-//     const { format = "structured" } = req.body;
+export const generateNotesFromFileHandle = async (req, res) => {
+  let filePath;
 
-//     if (!req.file) {
-//       return res
-//         .status(400)
-//         .json(new ApiResponse(400, {}, "File is required"));
-//     }
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "File required" });
+    }
 
-//     filePath = req.file.path;
+    filePath = req.file.path;
+    const absolutePath = path.resolve(filePath);
 
-//     /* -------- Extract PDF Text -------- */
-//     const fullText = await extractTextFromFile(filePath);
+    console.log("File exists:", fs.existsSync(absolutePath));
+    console.log("Absolute path:", absolutePath);
 
-//     if (!fullText || fullText.length < 100) {
-//       deleteFile(filePath);
-//       return res
-//         .status(400)
-//         .json(new ApiResponse(400, {}, "Unable to extract text"));
-//     }
+    if (!fs.existsSync(absolutePath)) {
+      throw new Error("File does not exist on disk");
+    }
 
-//     /* -------- Chunk Text -------- */
-//     const chunks = chunkText(fullText);
+    /* ---------- SEND FILE TO PYTHON ---------- */
+    const formData = new FormData();
+    formData.append("file", fs.createReadStream(absolutePath));
 
-//     const promptMap = {
-//       structured: "Create structured notes with headings and bullet points.",
-//       detailed: "Create detailed explanatory notes.",
-//       short: "Create concise revision notes.",
-//       highlight: "Extract only important terms with brief explanations.",
-//     };
+    const extractRes = await axios.post(
+      "https://python.aitechnotech.in/process-file",
+      formData,
+      { headers: formData.getHeaders() }
+    );
 
-//     const notesParts = [];
+    const extractedText = extractRes.data?.text;
 
-//     /* -------- OpenAI Calls (SAFE LOOP) -------- */
-//     for (const chunk of chunks) {
-//       const completion = await openai.chat.completions.create({
-//         model: "gpt-4o-mini",
-//         messages: [
-//           {
-//             role: "system",
-//             content: "You are an expert educational assistant.",
-//           },
-//           {
-//             role: "user",
-//             content: `${promptMap[format]}\n\n${chunk}`,
-//           },
-//         ],
-//         temperature: 0.3,
-//       });
+    if (!extractedText) {
+      throw new Error("No text extracted");
+    }
 
-//       notesParts.push(completion.choices[0].message.content);
-//     }
+    /* ---------- GENERATE NOTES ---------- */
+    const notesRes = await axios.post(
+      "https://python.aitechnotech.in/generate-multinotes",
+      {
+        text: extractedText,
+        note_type: "structured",
+      }
+    );
 
-//     /* -------- Merge Notes -------- */
-//     const finalNotes = notesParts.join("\n\n");
+    // ✅ DELETE ONLY AFTER EVERYTHING IS DONE
+    deleteFile(absolutePath);
 
-//     deleteFile(filePath);
+    return res.json({
+      success: true,
+      notes: notesRes.data,
+    });
+  } catch (error) {
+    console.error("Generate notes error:", error);
 
-//     return res.status(200).json(
-//       new ApiResponse(
-//         200,
-//         {
-//           format,
-//           notes: finalNotes,
-//         },
-//         Msg.DATA_GENERATED
-//       )
-//     );
-//   } catch (error) {
-//     console.error("Generate notes error:", error);
+    if (filePath && fs.existsSync(filePath)) {
+      deleteFile(filePath);
+    }
 
-//     if (filePath) deleteFile(filePath);
-
-//     return res
-//       .status(500)
-//       .json(new ApiResponse(500, {}, error.message));
-//   }
-// };
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
