@@ -2,7 +2,12 @@ import fs from "fs";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import PDFDocument from "pdfkit";
-import { PDFParse } from "pdf-parse";
+
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -113,12 +118,31 @@ export const extractTextFromFile = async (filePath) => {
   const buffer = fs.readFileSync(filePath);
 
   if (filePath.endsWith(".pdf")) {
-    const data = await new PDFParse(buffer);
-    console.log(data);
-    console.log(data.text);
+    const data = await pdfParse(buffer);
+
+    if (!data.text || data.text.trim().length === 0) {
+      throw new Error("PDF text extraction failed");
+    }
+    console.log("PDF TEXT LENGTH:", data.text.length);
+
+
     return data.text;
   }
 
-  // TXT fallback
+  // fallback for txt
   return buffer.toString("utf-8");
+};
+
+
+
+export const chunkText = (text, chunkSize = 5000) => {
+  const chunks = [];
+  let index = 0;
+
+  while (index < text.length) {
+    chunks.push(text.slice(index, index + chunkSize));
+    index += chunkSize;
+  }
+
+  return chunks;
 };

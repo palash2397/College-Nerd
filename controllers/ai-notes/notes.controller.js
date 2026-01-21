@@ -1,82 +1,87 @@
-import fs from "fs";
-import {openai} from "../../utils/openAi/index.js";
-import { ApiResponse } from "../../utils/ApiResponse.js";
-import { Msg } from "../../utils/responseMsg.js";
-import { extractTextFromFile, deleteFile } from "../../utils/helpers.js";
+// import fs from "fs";
+// import {openai} from "../../utils/openAi/index.js";
+// import { ApiResponse } from "../../utils/ApiResponse.js";
+// import { Msg } from "../../utils/responseMsg.js";
+// import { extractTextFromFile, deleteFile, chunkText } from "../../utils/helpers.js";
 
-export const generateNotesHandle = async (req, res) => {
-    let filePath;
+// export const generateNotesHandle = async (req, res) => {
+//   let filePath;
 
-    try {
-        const { format = "structured", title = "Lecture Notes" } = req.body;
+//   try {
+//     const { format = "structured" } = req.body;
 
-        if (!req.file) {
-            return res.status(400).json(new ApiResponse(400, {}, "File is required"));
-        }
+//     if (!req.file) {
+//       return res
+//         .status(400)
+//         .json(new ApiResponse(400, {}, "File is required"));
+//     }
 
-        filePath = req.file.path;
+//     filePath = req.file.path;
 
-        /* ---------------- Extract text from file ---------------- */
-        const lectureText = await extractTextFromFile(filePath);
+//     /* -------- Extract PDF Text -------- */
+//     const fullText = await extractTextFromFile(filePath);
 
-        if (!lectureText || lectureText.length < 50) {
-            return res
-                .status(400)
-                .json(new ApiResponse(400, {}, "Unable to extract meaningful text"));
-        }
+//     if (!fullText || fullText.length < 100) {
+//       deleteFile(filePath);
+//       return res
+//         .status(400)
+//         .json(new ApiResponse(400, {}, "Unable to extract text"));
+//     }
 
-        /* ---------------- Prompt based on format ---------------- */
-        const formatPromptMap = {
-            structured:
-                "Create structured notes with headings, bullet points, and sections.",
-            detailed: "Create detailed notes with explanations and examples.",
-            short: "Create concise short notes focusing on key points only.",
-            highlight:
-                "Extract and list only important terms with brief explanations.",
-        };
+//     /* -------- Chunk Text -------- */
+//     const chunks = chunkText(fullText);
 
-        const systemPrompt = `
-                 You are an expert educational assistant.
-                 ${formatPromptMap[format] || formatPromptMap.structured}
-                 Keep output clean and easy to read.
-                 `;
+//     const promptMap = {
+//       structured: "Create structured notes with headings and bullet points.",
+//       detailed: "Create detailed explanatory notes.",
+//       short: "Create concise revision notes.",
+//       highlight: "Extract only important terms with brief explanations.",
+//     };
 
-        /* ---------------- OpenAI Call ---------------- */
-        const aiResponse = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-                { role: "system", content: systemPrompt },
-                {
-                    role: "user",
-                    content: `Title: ${title}\n\nContent:\n${lectureText}`,
-                },
-            ],
-            temperature: 0.4,
-        });
+//     const notesParts = [];
 
-        const notes =
-            aiResponse.choices?.[0]?.message?.content || "No notes generated";
+//     /* -------- OpenAI Calls (SAFE LOOP) -------- */
+//     for (const chunk of chunks) {
+//       const completion = await openai.chat.completions.create({
+//         model: "gpt-4o-mini",
+//         messages: [
+//           {
+//             role: "system",
+//             content: "You are an expert educational assistant.",
+//           },
+//           {
+//             role: "user",
+//             content: `${promptMap[format]}\n\n${chunk}`,
+//           },
+//         ],
+//         temperature: 0.3,
+//       });
 
-        /* ---------------- Cleanup ---------------- */
-        deleteFile(filePath);
+//       notesParts.push(completion.choices[0].message.content);
+//     }
 
-        /* ---------------- Response ---------------- */
-        return res.status(200).json(
-            new ApiResponse(
-                200,
-                {
-                    title,
-                    format,
-                    notes,
-                },
-                Msg.DATA_GENERATED,
-            ),
-        );
-    } catch (error) {
-        console.error("Generate notes error:", error);
+//     /* -------- Merge Notes -------- */
+//     const finalNotes = notesParts.join("\n\n");
 
-        if (filePath) deleteFile(filePath);
+//     deleteFile(filePath);
 
-        return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
-    }
-};
+//     return res.status(200).json(
+//       new ApiResponse(
+//         200,
+//         {
+//           format,
+//           notes: finalNotes,
+//         },
+//         Msg.DATA_GENERATED
+//       )
+//     );
+//   } catch (error) {
+//     console.error("Generate notes error:", error);
+
+//     if (filePath) deleteFile(filePath);
+
+//     return res
+//       .status(500)
+//       .json(new ApiResponse(500, {}, error.message));
+//   }
+// };
