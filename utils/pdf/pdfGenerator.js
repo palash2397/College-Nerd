@@ -1,5 +1,5 @@
 import puppeteer from "puppeteer";
-import { buildNotesHtmlTemplate } from "./pdfTemplate.js";
+// import { buildNotesHtmlTemplate } from "./pdfTemplate.js";
 
 export const generatePdfFromHtml = async ({ title, subtitle, html }, res) => {
   const browser = await puppeteer.launch({

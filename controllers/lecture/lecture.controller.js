@@ -7,6 +7,7 @@ import FormData from "form-data";
 
 import User from "../../models/user/user.js";
 
+import { generatePdfFromHtml } from "../../utils/pdf/pdfGenerator.js";
 import Transcription from "../../models/transcription/transcription.js";
 import Lecture from "../../models/lecture/lecture.js";
 import Notes from "../../models/lecture/notes/notes.js";
@@ -714,7 +715,7 @@ Limitations:
 ${n.limitations.map((l) => `- ${l}`).join("\n")}
       `;
 
-      return generatePdf(
+      return generatePdfFromHtml(
         {
           title: "Lecture Notes",
           subtitle: "Notes Output",
