@@ -2,8 +2,7 @@ import fs from "fs";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import PDFDocument from "pdfkit";
-
-// import OpenAI from "openai";
+import { PDFParse } from "pdf-parse";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -43,10 +42,6 @@ export const allowedFields = [
 ];
 
 export const allowedLanguages = ["en", "fr", "es"];
-
-// export const openai = new OpenAI({
-//   apiKey: process.env.OPENAI_KEY,
-// });
 
 export const formatDate = (dateString) => {
   if (!dateString) return "";
@@ -88,7 +83,7 @@ export const generatePdf = ({ title, subtitle, content }, res) => {
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader(
     "Content-Disposition",
-    `attachment; filename="${title || "document"}.pdf"`
+    `attachment; filename="${title || "document"}.pdf"`,
   );
 
   doc.pipe(res);
@@ -112,4 +107,18 @@ export const generatePdf = ({ title, subtitle, content }, res) => {
   });
 
   doc.end();
+};
+
+export const extractTextFromFile = async (filePath) => {
+  const buffer = fs.readFileSync(filePath);
+
+  if (filePath.endsWith(".pdf")) {
+    const data = await new PDFParse(buffer);
+    console.log(data);
+    console.log(data.text);
+    return data.text;
+  }
+
+  // TXT fallback
+  return buffer.toString("utf-8");
 };

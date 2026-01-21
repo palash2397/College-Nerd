@@ -27,6 +27,7 @@ import {
   saveMedicalScribetHandle,
   allUsersFeedbackHandle,
   allFlashCards,
+  flashCardByIdHandle
 } from "../controllers/user/user.controller.js";
 
 import {
@@ -39,9 +40,10 @@ import {
   createSubscriptionPaymentIntentHandle,
   stripeWebhookHandle,
   confirmPaymentIntentHandle,
-  paymentHistory
+  paymentHistory,
 } from "../controllers/payment/payment.controller.js";
 
+import { generateNotesHandle } from "../controllers/ai-notes/notes.controller.js";
 import { auth } from "../middlewares/auth.js";
 import { setUploadPath } from "../utils/helpers.js";
 import { upload } from "../middlewares/multer.js";
@@ -64,7 +66,7 @@ userRouter.post(
   upload.single("avatar"),
   updateProfileHandle,
 );
-userRouter.get("/my-profile", auth,myProfileHandle);
+userRouter.get("/my-profile", auth, myProfileHandle);
 userRouter.get("/programs", allProgramsHandle);
 userRouter.get("/notifications", auth, allNotifications);
 userRouter.patch("/notification-setting", auth, updateNotificationSettings);
@@ -94,6 +96,7 @@ userRouter.post("/generate/ai-summary/:id", auth, generateNotesSummaryHandle);
 
 // flashcard
 userRouter.get("/flashcard", auth, allFlashCards);
+userRouter.get("/flashcard/:id", auth, flashCardByIdHandle);
 
 // subscription
 userRouter.get("/plans", auth, getAllPlansHandle);
@@ -117,6 +120,16 @@ userRouter.post(
   confirmPaymentIntentHandle,
 );
 
+// payment
 userRouter.get("/payment-history", auth, paymentHistory);
+
+// ai
+userRouter.post(
+  "/generate/ai/notes",
+  auth,
+  setUploadPath("notes"),
+  upload.single("file"),
+  generateNotesHandle,
+);
 
 export default userRouter;

@@ -1190,3 +1190,29 @@ export const allFlashCards = async (req, res) => {
     return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
+
+export const flashCardByIdHandle = async(req, res)=>{
+  try {
+    const {id} = req.params;
+    const schema = Joi.object({
+      id: Joi.string().required(),
+    });
+    
+    const {error} = schema.validate({id});
+    if(error){
+      return res.status(400).json(new ApiResponse(400, {}, error.details[0].message));
+    }
+    
+    const flashcard = await Flashcard.findById(id);
+    
+    if(!flashcard){
+      return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+    }
+    
+    return res.status(200).json(new ApiResponse(200, flashcard, Msg.DATA_FETCHED));    
+  } catch (error) {
+    console.log("Error fetching flashcard by id:", error);
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    
+  }
+}
