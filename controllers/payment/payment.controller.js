@@ -94,6 +94,7 @@ export const createSubscriptionPaymentIntentHandle = async (req, res) => {
         {
           clientSecret: paymentIntent.client_secret,
           paymentIntentId: paymentIntent.id,
+          customerId: user.stripeCustomerId
         },
         Msg.PAYMENT_INTENT_CREATED,
       ),
