@@ -235,7 +235,7 @@ export const loginHandle = async (req, res) => {
         .json(new ApiResponse(400, {}, error.details[0].message));
 
     const user = await User.findOne({ email: email.toLowerCase() }).select(
-      "+password"
+      "+password",
     );
     if (!user)
       return res.status(400).json(new ApiResponse(400, {}, Msg.USER_NOT_FOUND));
@@ -259,7 +259,7 @@ export const loginHandle = async (req, res) => {
     const token = Jwt.sign(
       { id: user._id, role: user.role, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: "30d" }
+      { expiresIn: "30d" },
     );
 
     const userData = {
@@ -449,7 +449,7 @@ export const changePasswordHandle = async (req, res) => {
 export const myProfileHandle = async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user.id }).select(
-      "-password -otp -otpExpireAt -__v -createdAt -updatedAt -pin -otpVerifiedForResetPassword -googleId"
+      "-password -otp -otpExpireAt -__v -createdAt -updatedAt -pin -otpVerifiedForResetPassword -googleId",
     );
 
     if (!user)
@@ -536,7 +536,7 @@ export const allProgramsHandle = async (req, res) => {
 export const allNotifications = async (req, res) => {
   try {
     let notification = await Notification.findOne({ user: req.user.id }).select(
-      "-createdAt -updatedAt -__v"
+      "-createdAt -updatedAt -__v",
     );
 
     if (!notification) {
@@ -570,7 +570,7 @@ export const updateNotificationSettings = async (req, res) => {
         new: true,
         upsert: true,
         setDefaultsOnInsert: true,
-      }
+      },
     ).select("-createdAt -updatedAt -__v");
 
     return res
@@ -585,7 +585,7 @@ export const updateNotificationSettings = async (req, res) => {
 export const myLanguagesHandle = async (req, res) => {
   try {
     const languages = await Language.find({ userId: req.user.id }).select(
-      "-createdAt -updatedAt -__v"
+      "-createdAt -updatedAt -__v",
     );
 
     if (languages.length == 0) {
@@ -618,7 +618,7 @@ export const updateLanguageHandle = async (req, res) => {
         new: true,
         upsert: true,
         setDefaultsOnInsert: true,
-      }
+      },
     ).select("-__v -updatedAt -createdAt");
 
     return res
@@ -663,8 +663,8 @@ export const contactUsHandle = async (req, res) => {
         new ApiResponse(
           200,
           {},
-          "Thank you for contacting us. We will get back to you soon!"
-        )
+          "Thank you for contacting us. We will get back to you soon!",
+        ),
       );
   } catch (error) {
     console.error("Error while processing contact form:", error);
@@ -775,7 +775,7 @@ export const convertToSoapHandle = async (req, res) => {
         .json(new ApiResponse(400, {}, error.details[0].message));
 
     const data = await MedicalScribe.findById(id).select(
-      "-createdAt -updatedAt -__v"
+      "-createdAt -updatedAt -__v",
     );
     console.log("data ----------->", data);
 
@@ -786,7 +786,7 @@ export const convertToSoapHandle = async (req, res) => {
       "https://python.aitechnotech.in/soap-notes/convert-to-soap",
       {
         transcription: data.text,
-      }
+      },
     );
 
     const soapNotes = response.data;
@@ -798,8 +798,8 @@ export const convertToSoapHandle = async (req, res) => {
           transcription: data,
           soapNotes,
         },
-        Msg.DATA_GENERATED
-      )
+        Msg.DATA_GENERATED,
+      ),
     );
   } catch (error) {
     console.log("Error while converting to soap", error);
@@ -836,13 +836,13 @@ export const transcribeFileHandle = async (req, res) => {
     formData.append(
       "file",
       fs.createReadStream(filePath),
-      req.file.originalname
+      req.file.originalname,
     );
 
     const response = await axios.post(
       "https://python.aitechnotech.in/transcribe/transcribe-file",
       formData,
-      { headers: formData.getHeaders() }
+      { headers: formData.getHeaders() },
     );
 
     const transcription = response.data;
@@ -869,8 +869,8 @@ export const transcribeFileHandle = async (req, res) => {
         new ApiResponse(
           200,
           { transcriptionId: transcriptionData._id, transcription },
-          Msg.DATA_GENERATED
-        )
+          Msg.DATA_GENERATED,
+        ),
       );
   } catch (error) {
     console.log("Error while transcribing file", error);
@@ -922,8 +922,8 @@ export const generateAiNotesHandle = async (req, res) => {
             transcription,
             notes: existingNotes,
           },
-          Msg.DATA_ALREADY_EXISTS
-        )
+          Msg.DATA_ALREADY_EXISTS,
+        ),
       );
     }
 
@@ -931,7 +931,7 @@ export const generateAiNotesHandle = async (req, res) => {
       "https://python.aitechnotech.in/ai-notes/generate-structured-notes",
       {
         transcription: transcription.text,
-      }
+      },
     );
 
     const aiNotes = response.data;
@@ -958,8 +958,8 @@ export const generateAiNotesHandle = async (req, res) => {
           transcription,
           notes,
         },
-        Msg.DATA_GENERATED
-      )
+        Msg.DATA_GENERATED,
+      ),
     );
   } catch (error) {
     console.log("Error while generating medical transcription file", error);
@@ -1010,8 +1010,8 @@ export const generateNotesSummaryHandle = async (req, res) => {
             transcription,
             summary: existingSummary,
           },
-          Msg.DATA_ALREADY_EXISTS
-        )
+          Msg.DATA_ALREADY_EXISTS,
+        ),
       );
     }
 
@@ -1020,7 +1020,7 @@ export const generateNotesSummaryHandle = async (req, res) => {
       "https://python.aitechnotech.in/ai-summarys/generate-ai-notes",
       {
         transcription: transcription.text,
-      }
+      },
     );
 
     console.log("response ------>", response);
@@ -1051,8 +1051,8 @@ export const generateNotesSummaryHandle = async (req, res) => {
           transcription,
           summary,
         },
-        Msg.DATA_GENERATED
-      )
+        Msg.DATA_GENERATED,
+      ),
     );
   } catch (error) {
     console.log("Error while generating medical transcription file", error);
@@ -1146,7 +1146,7 @@ export const allUsersFeedbackHandle = async (req, res) => {
       Object.entries(ratings).map(([k, v]) => [
         k,
         { count: v, percent: total ? +((v / total) * 100).toFixed(1) : 0 },
-      ])
+      ]),
     );
 
     return res.status(200).json({
@@ -1191,28 +1191,31 @@ export const allFlashCards = async (req, res) => {
   }
 };
 
-export const flashCardByIdHandle = async(req, res)=>{
+export const flashCardByIdHandle = async (req, res) => {
   try {
-    const {id} = req.params;
+    const { id } = req.params;
     const schema = Joi.object({
       id: Joi.string().required(),
     });
-    
-    const {error} = schema.validate({id});
-    if(error){
-      return res.status(400).json(new ApiResponse(400, {}, error.details[0].message));
+
+    const { error } = schema.validate({ id });
+    if (error) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, error.details[0].message));
     }
-    
+
     const flashcard = await Flashcard.findById(id);
-    
-    if(!flashcard){
+
+    if (!flashcard) {
       return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
     }
-    
-    return res.status(200).json(new ApiResponse(200, flashcard, Msg.DATA_FETCHED));    
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, flashcard, Msg.DATA_FETCHED));
   } catch (error) {
     console.log("Error fetching flashcard by id:", error);
     return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
-    
   }
-}
+};

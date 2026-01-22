@@ -65,7 +65,15 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    stripeCustomerId: {
+      type: String,
+      default: null,
+    },
 
+    defaultPaymentMethod: {
+      type: String, 
+      default: null,
+    },
     otp: {
       type: String,
       default: null,
@@ -82,7 +90,7 @@ const userSchema = new mongoose.Schema(
 
     hasActiveSubscription: {
       type: Boolean,
-      default: false
+      default: false,
     },
   },
   {

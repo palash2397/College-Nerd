@@ -8,6 +8,53 @@ import { ApiResponse } from "../../utils/ApiResponse.js";
 import { Msg } from "../../utils/responseMsg.js";
 import stripe from "../../utils/stripe/stripe.js";
 
+
+export const createCustomerHandle= async(req, res)=>{
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, {}, Msg.USER_NOT_FOUND));
+    }
+    if (user.stripeCustomerId) {
+      return res.status(200).json(
+        new ApiResponse(
+          200,
+          {
+            customer: {
+              id: user.stripeCustomerId,
+            },
+          },
+          Msg.CUSTOMER_FETCH_SUCCESS,
+        ),
+      );
+    }
+      
+    
+    const customer = await stripe.customers.create({
+      email: user.email,
+      name: user.name,
+    });
+    
+    user.stripeCustomerId = customer.id;
+    await user.save();
+    
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          customer,
+        },
+        Msg.CUSTOMER_CREATED,
+      ),
+    );
+  } catch (error) {
+    console.error("Create customer error:", error);
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+  }
+}
+
 export const createSubscriptionPaymentIntentHandle = async (req, res) => {
   try {
     const { planId } = req.params;
@@ -23,9 +70,18 @@ export const createSubscriptionPaymentIntentHandle = async (req, res) => {
         .json(new ApiResponse(404, {}, Msg.SUBSCRIPTION_PLAN_NOT_FOUND));
     }
 
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, {}, Msg.USER_NOT_FOUND));
+    }
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: plan.price * 100,
       currency: plan.currency.toLowerCase(),
+      customer: user.stripeCustomerId, // 🔥 REQUIRED
+      setup_future_usage: "off_session", // 🔥 SAVES CARD
       metadata: {
         userId: req.user.id,
         planId,
@@ -72,6 +128,7 @@ export const stripeWebhookHandle = async (req, res) => {
       // console.log("Payment successful:", intent);
 
       const { userId, planId } = intent.metadata;
+    //  const paymentMethodId = intent.payment_method;
 
       if (!userId || !planId) {
         console.log("Missing metadata, skipping webhook processing");
@@ -135,6 +192,7 @@ export const stripeWebhookHandle = async (req, res) => {
         { upsert: true },
       );
       await User.findByIdAndUpdate(userId, {
+        // defaultPaymentMethod: paymentMethodId,
         hasActiveSubscription: false,
       });
     }
@@ -172,15 +230,16 @@ export const confirmPaymentIntentHandle = async (req, res) => {
   }
 };
 
-
 export const paymentHistory = async (req, res) => {
   try {
-   
-
-    const payments = await Payment.find({ user: req.user.id }).sort({ createdAt: -1 });
+    const payments = await Payment.find({ user: req.user.id }).sort({
+      createdAt: -1,
+    });
 
     if (!payments || payments.length === 0) {
-      return res.status(404).json(new ApiResponse(404, {}, Msg.PAYMENT_NOT_FOUND));
+      return res
+        .status(404)
+        .json(new ApiResponse(404, {}, Msg.PAYMENT_NOT_FOUND));
     }
 
     return res.status(200).json(
@@ -198,7 +257,6 @@ export const paymentHistory = async (req, res) => {
   }
 };
 
-
 export const adminPaymentsHandle = async (req, res) => {
   try {
     const payments = await Payment.find()
@@ -206,7 +264,7 @@ export const adminPaymentsHandle = async (req, res) => {
       .populate("plan", "name price")
       .sort({ createdAt: -1 });
 
-    const data = payments.map(p => ({
+    const data = payments.map((p) => ({
       user: {
         id: p.user?._id,
         name: p.user?.name,
@@ -225,33 +283,24 @@ export const adminPaymentsHandle = async (req, res) => {
       createdAt: p.createdAt,
     }));
 
-    return res
-      .status(200)
-      .json(new ApiResponse(200, data, Msg.DATA_FETCHED));
+    return res.status(200).json(new ApiResponse(200, data, Msg.DATA_FETCHED));
   } catch (error) {
     console.error("Admin payments error:", error);
-    return res
-      .status(500)
-      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
-
 
 export const adminRevenueSummaryHandle = async (req, res) => {
   try {
     const now = new Date();
 
-    const startOfTodayUTC = new Date(Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate()
-    ));
+    const startOfTodayUTC = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
 
-    const startOfMonthUTC = new Date(Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      1
-    ));
+    const startOfMonthUTC = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+    );
 
     const [total, today, month] = await Promise.all([
       Payment.aggregate([
@@ -286,14 +335,11 @@ export const adminRevenueSummaryHandle = async (req, res) => {
           today: today[0]?.amount || 0,
           thisMonth: month[0]?.amount || 0,
         },
-        Msg.DATA_FETCHED
-      )
+        Msg.DATA_FETCHED,
+      ),
     );
   } catch (error) {
     console.error("Admin revenue error:", error);
-    return res
-      .status(500)
-      .json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
   }
 };
-

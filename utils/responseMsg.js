@@ -82,6 +82,13 @@ export const Msg = {
   PAYMENT_INTENT_FAILED: `Payment intent failed`,
   PAYMENT_ALREADY_EXISTS: `Payment already exists`,
   PAYMENT_NOT_FOUND: `Payment not found`,
+  CUSTOMER_CREATED: `Customer created successfully`,
+  CUSTOMER_ALREADY_EXISTS: `Customer already exists`,
+  CUSTOMER_FETCH_SUCCESS: `Customer fetched successfully`,
+  CUSTOMER_NOT_FOUND: `Customer not found`,
+  CUSTOMER_UPDATE_FAILED: `Customer update failed`,
+  CUSTOMER_DELETE_FAILED: `Customer delete failed`,
+  CUSTOMER_DELETE_SUCCESS: `Customer deleted successfully`,
 
 
   // contest
