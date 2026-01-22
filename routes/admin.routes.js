@@ -30,6 +30,7 @@ import {
   createFlashCardHandle,
   deleteFlashCardHandle,
   changeStatusOfCardHandle,
+  getAllFlashCardsHandle,
 } from "../controllers/admin/flashcard.controller.js";
 
 import {
@@ -83,6 +84,7 @@ adminRouter.get("/search-user", auth, isAdmin, searchUserHandle);
 adminRouter.post("/flashcard", auth, isAdmin, createFlashCardHandle);
 adminRouter.delete("/flashcard/:id", auth, isAdmin, deleteFlashCardHandle);
 adminRouter.patch("/flashcard/:id", auth, isAdmin, changeStatusOfCardHandle);
+adminRouter.get("/flashcards", auth, isAdmin, getAllFlashCardsHandle);
 
 // Subscription
 adminRouter.post("/subscription", auth, isAdmin, createSubscriptionPlanHandle);
@@ -94,7 +96,6 @@ adminRouter.delete(
 );
 adminRouter.patch("/subscription", auth, isAdmin, updateSubscriptionHandle);
 adminRouter.get("/subscriptions", auth, isAdmin, adminSubscriptionsHandle);
-
 
 
 // payment 

@@ -87,5 +87,18 @@ export const createFlashCardHandle = async (req, res) => {
     }
  }
 
+ export const getAllFlashCardsHandle = async(req, res)=>{
+    try {
+        const flashcards = await Flashcard.find();
+        if(!flashcards || flashcards.length === 0){
+            return res.status(404).json(new ApiResponse(404, {}, Msg.DATA_NOT_FOUND));
+        }
+        return res.status(200).json(new ApiResponse(200, flashcards, Msg.DATA_FETCHED));
+    } catch (error) {
+        console.log(`Error while getting all flashcards :`, error);
+        return res.status(500).json(new ApiResponse(500, {}, Msg.SERVER_ERROR));
+    }
+ }
+
 
 
