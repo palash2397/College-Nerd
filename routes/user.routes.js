@@ -79,12 +79,13 @@ userRouter.get("/languages", auth, myLanguagesHandle);
 userRouter.patch("/language", auth, updateLanguageHandle);
 userRouter.post("/contact", auth, contactUsHandle);
 userRouter.get("/faq", auth, getFaqHandle);
-userRouter.post("/transcript/save", auth, saveTranscriptHandle);
-userRouter.post("/medical-scribe/save", auth, saveMedicalScribetHandle);
-userRouter.post("/transcript/soap/:id", auth, convertToSoapHandle);
+userRouter.post("/transcript/save", auth, checkSubscription, saveTranscriptHandle);
+userRouter.post("/medical-scribe/save", auth, checkSubscription, saveMedicalScribetHandle);
+userRouter.post("/transcript/soap/:id", auth, checkSubscription, convertToSoapHandle);
 userRouter.post(
   "/transcribe/file",
   auth,
+  checkSubscription,
   setUploadPath("transcribe"),
   upload.single("file"),
   transcribeFileHandle,
@@ -96,12 +97,12 @@ userRouter.get("/feedback", auth, userFeedbackHandle);
 userRouter.get("/feedback/all", auth, allUsersFeedbackHandle);
 
 // ai
-userRouter.post("/generate/ai-notes/:id", auth, generateAiNotesHandle);
-userRouter.post("/generate/ai-summary/:id", auth, generateNotesSummaryHandle);
+userRouter.post("/generate/ai-notes/:id", auth, checkSubscription, generateAiNotesHandle);
+userRouter.post("/generate/ai-summary/:id", auth, checkSubscription,generateNotesSummaryHandle);
 
 // flashcard
-userRouter.get("/flashcard", auth, allFlashCards);
-userRouter.get("/flashcard/:id", auth, flashCardByIdHandle);
+userRouter.get("/flashcard", auth, checkSubscription, allFlashCards);
+userRouter.get("/flashcard/:id", auth, checkSubscription,flashCardByIdHandle);
 
 // subscription
 userRouter.get("/plans", auth, getAllPlansHandle);
@@ -137,8 +138,8 @@ userRouter.post(
   generateNotesFromFileHandle,
 );
 
-userRouter.get("/ai/my-notes", auth, myNotesHandle);
-userRouter.get("/ai/my-note/:id", auth, myNoteHandle);
-userRouter.get("/ai/my-note/:id/pdf", auth, notesToPdfHandle);
+userRouter.get("/ai/my-notes", auth, checkSubscription, myNotesHandle);
+userRouter.get("/ai/my-note/:id", auth, checkSubscription,myNoteHandle);
+userRouter.get("/ai/my-note/:id/pdf", auth, checkSubscription,notesToPdfHandle);
 
 export default userRouter;

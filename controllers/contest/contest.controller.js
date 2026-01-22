@@ -70,7 +70,7 @@ export const createContestHandle = async (req, res) => {
     return res
       .status(201)
       .json(
-        new ApiResponse(201, { contestId: contest._id }, Msg.DATA_GENERATED)
+        new ApiResponse(201, { contestId: contest._id }, Msg.CONTEST_CREATED)
       );
   } catch (error) {
     console.error("Error creating contest:", error);
