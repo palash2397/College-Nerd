@@ -37,7 +37,7 @@ import {
 } from "../controllers/admin/subscription.controller.js";
 
 import {
- 
+  createCustomerHandle,
   createSubscriptionPaymentIntentHandle,
   stripeWebhookHandle,
   confirmPaymentIntentHandle,
@@ -111,6 +111,7 @@ userRouter.post("/subscribe/:planId", auth, subscribeToPlanHandle);
 userRouter.get("/my-subscription", auth, getMySubscriptionHandle);
 
 // payment
+userRouter.post("/create-customer", auth, createCustomerHandle);
 userRouter.post(
   "/payment-intent/:planId",
   auth,
