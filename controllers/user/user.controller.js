@@ -847,21 +847,23 @@ export const transcribeFileHandle = async (req, res) => {
 
     const transcription = response.data;
 
-    const lecture = await Lecture.create({
-      user: req.user.id,
-      sessionId: transcription.session_id,
-      courseType: courseType || null,
-      moduleType: moduleType || null,
-      title: title || null,
-      sourceType: "recording",
-    });
+    console.log("-------->", transcription);
 
-    const transcriptionData = await Transcription.create({
-      user: req.user.id,
-      sessionId: transcription.session_id,
-      lectureId: lecture._id,
-      text: transcription.transcript,
-    });
+    // const lecture = await Lecture.create({
+    //   user: req.user.id,
+    //   sessionId: transcription.session_id,
+    //   courseType: courseType || null,
+    //   moduleType: moduleType || null,
+    //   title: title || null,
+    //   sourceType: "recording",
+    // });
+
+    // const transcriptionData = await Transcription.create({
+    //   user: req.user.id,
+    //   sessionId: transcription.session_id,
+    //   lectureId: lecture._id,
+    //   text: transcription.transcript,
+    // });
 
     return res
       .status(200)
