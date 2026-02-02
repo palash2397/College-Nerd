@@ -809,23 +809,6 @@ export const convertToSoapHandle = async (req, res) => {
 
 export const transcribeFileHandle = async (req, res) => {
   try {
-    const body = req.body || {};
-
-    const courseType = body.courseType || "";
-    const moduleType = body.moduleType || "";
-    const title = body.title || "";
-
-    const schema = Joi.object({
-      courseType: Joi.string().optional().allow(""),
-      moduleType: Joi.string().optional().allow(""),
-      title: Joi.string().optional().allow(""),
-    });
-    const { error } = schema.validate({ courseType, moduleType, title });
-    if (error)
-      return res
-        .status(400)
-        .json(new ApiResponse(400, {}, error.details[0].message));
-
     if (!req.file) {
       return res.status(400).json(new ApiResponse(400, {}, Msg.DATA_REQUIRED));
     }
@@ -847,12 +830,16 @@ export const transcribeFileHandle = async (req, res) => {
 
     const transcription = response.data;
 
-    console.log("-------->", transcription);
+    if (!transcription.title) {
+      return res
+        .status(400)
+        .json(new ApiResponse(400, {}, Msg.DATA_REQUIRED));
+    }
 
     const lecture = await Lecture.create({
       user: req.user.id,
       sessionId: transcription.session_id,
-      title: transcription.title || null,
+      title: transcription.title,
       sourceType: "recording",
     });
 

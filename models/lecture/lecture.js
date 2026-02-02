@@ -21,17 +21,6 @@ const LectureSchema = new mongoose.Schema(
       unique: true, // 1 lecture per session
     },
 
-    courseType:{
-      type: String,
-      required: false,
-    },
-
-    moduleType:{
-      type: String,
-      required: false,
-    },
-    
-
     sourceType: {
       type: String,
       enum: ["recording", "upload"],
@@ -44,8 +33,6 @@ const LectureSchema = new mongoose.Schema(
       default: "created",
       index: true,
     },
-
-
 
     language: {
       type: String,
@@ -98,8 +85,8 @@ const LectureSchema = new mongoose.Schema(
     // },
   },
 
-  { timestamps: true }
+  { timestamps: true },
 );
 
-const Lecture =mongoose.model("Lecture", LectureSchema);
+const Lecture = mongoose.model("Lecture", LectureSchema);
 export default Lecture;
