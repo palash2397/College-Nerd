@@ -829,6 +829,7 @@ export const transcribeFileHandle = async (req, res) => {
     );
 
     const transcription = response.data;
+    console.log("transcription ----------->", transcription);
 
     if (!transcription.title) {
       return res
@@ -836,26 +837,26 @@ export const transcribeFileHandle = async (req, res) => {
         .json(new ApiResponse(400, {}, Msg.DATA_REQUIRED));
     }
 
-    const lecture = await Lecture.create({
-      user: req.user.id,
-      sessionId: transcription.session_id,
-      title: transcription.title,
-      sourceType: "recording",
-    });
+    // const lecture = await Lecture.create({
+    //   user: req.user.id,
+    //   sessionId: transcription.session_id,
+    //   title: transcription.title,
+    //   sourceType: "recording",
+    // });
 
-    const transcriptionData = await Transcription.create({
-      user: req.user.id,
-      sessionId: transcription.session_id,
-      lectureId: lecture._id,
-      text: transcription.transcript,
-    });
+    // const transcriptionData = await Transcription.create({
+    //   user: req.user.id,
+    //   sessionId: transcription.session_id,
+    //   lectureId: lecture._id,
+    //   text: transcription.transcript,
+    // });
 
     return res
       .status(200)
       .json(
         new ApiResponse(
           200,
-          { transcriptionId: transcriptionData._id, transcription },
+          { transcriptionId: {}, transcription },
           Msg.DATA_GENERATED,
         ),
       );
